@@ -168,6 +168,13 @@ final class PrizeDetailMenu implements MenuInventoryHolder {
         Lang lang = plugin.config().lang();
         long now = System.currentTimeMillis();
 
+        // Removing the prize of a live round would close bidding and leave the winner nothing to receive.
+        var live = plugin.state().current();
+        if (live != null && live.active() && live.entryId().equals(entry.id())) {
+            lang.send(clicker, "editor.msg.in-use", Placeholder.unparsed("id", entry.id()));
+            return;
+        }
+
         if (now - deleteArmedAt >= DELETE_CONFIRM_MS) {
             deleteArmedAt = now;
             lang.send(clicker, "editor.msg.delete-armed", Placeholder.unparsed("id", entry.id()));

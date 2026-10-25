@@ -201,6 +201,7 @@ editor:
     given: "<prefix> <#00FF00>You got a copy of <white><id><#00FF00>!"
     not-an-item: "<prefix> <#FF0000>That is not an item!"
     gone: "<prefix> <#FF0000>That prize no longer exists!"
+    in-use: "<prefix> <#FF0000>The <white><id> <#FF0000>prize is being auctioned right now, wait until it is over or switch it off instead!"
 
 admin:
   start-sent: "<prefix> <#00FF00>You have started the dark auction!"

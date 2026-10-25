@@ -9,7 +9,6 @@ import com.crescentkingdom.cksmpblackmarket.storage.BlackMarketDb.BidOutcome;
 import com.crescentkingdom.cksmpblackmarket.util.Text;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -95,8 +94,16 @@ public final class BidService {
         if (inFlight.putIfAbsent(uuid, settled) != null) return;
         lastBidMs.put(uuid, now);
 
-        EconomyResponse charge = plugin.economy().withdrawPlayer(player, amount);
-        if (!charge.transactionSuccess()) {
+        // A throwing economy must not leave the slot claimed, or this player could never bid again.
+        boolean charged;
+        try {
+            charged = plugin.economy().withdrawPlayer(player, amount).transactionSuccess();
+        } catch (RuntimeException err) {
+            plugin.getLogger().log(Level.SEVERE, "Economy failed while charging " + player.getName(), err);
+            charged = false;
+        }
+
+        if (!charged) {
             release(uuid, settled);
             fail(player, cfg, "bid.withdraw-failed");
             return;

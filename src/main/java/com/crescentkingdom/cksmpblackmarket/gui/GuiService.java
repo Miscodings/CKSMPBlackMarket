@@ -26,6 +26,10 @@ public final class GuiService {
     }
 
     public void open(Player player) {
+        open(player, true);
+    }
+
+    private void open(Player player, boolean withSound) {
         Config cfg = plugin.config();
 
         if (!cfg.settings().participate()) {
@@ -40,7 +44,7 @@ public final class GuiService {
             plugin.core().getGUIManager().setGUI(player, gui);
             viewers.put(player.getUniqueId(), gui);
             gui.render();
-            cfg.play(player, "menu-open");
+            if (withSound) cfg.play(player, "menu-open");
         }, null);
 
         resync(true);
@@ -69,7 +73,7 @@ public final class GuiService {
             BiddingGui gui = entry.getValue();
             player.getScheduler().run(plugin, task -> {
                 // Preview -> bidding changes the layout, so the inventory is rebuilt (same size, no flicker to a closed state).
-                if (!gui.render()) open(player);
+                if (!gui.render()) open(player, false);
             }, () -> viewers.remove(entry.getKey()));
         }
     }
