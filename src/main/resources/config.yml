@@ -13,11 +13,15 @@ leader:
 
 # ----- when events happen -----
 schedule:
-  zone: "America/New_York"
-  # Daily start times (HH:mm, 24h) in the zone above. Empty list = manual starts only (/blackmarket start).
-  times:
-    - "18:00"
-    - "21:30"
+  # Same clock model as CKSMPMobs: an event starts every interval-minutes counted from midnight of this zone,
+  # plus offset-minutes. UTC keeps every shard in sync. interval 120 + offset 30 = 00:30, 02:30, 04:30, ...
+  # (set interval-minutes to 60 for every hour at :30). Must be identical on every shard.
+  zone: "UTC"
+  interval-minutes: 120
+  offset-minutes: 30
+  # Alternative to the interval: fixed daily start times (HH:mm in the zone above). Used only when
+  # interval-minutes is 0. Empty list too = manual starts only (/blackmarket start).
+  times: []
   # Restrict to days of the week (MONDAY..SUNDAY). Empty = every day.
   days: []
   # How long before the first item the event is announced (AxDarkAuctions: start-wait-time).

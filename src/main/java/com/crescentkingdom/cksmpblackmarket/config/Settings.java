@@ -28,6 +28,8 @@ public record Settings(
         ZoneId zone,
         List<LocalTime> times,
         Set<DayOfWeek> days,
+        int intervalMinutes,
+        int offsetMinutes,
         int announceSeconds,
         List<Integer> announceAt,
         int manualAnnounceSeconds,
@@ -61,7 +63,7 @@ public record Settings(
 
     /** First scheduled slot strictly after {@code afterMs}, or -1 when nothing is scheduled. */
     public long firstSlotAfter(long afterMs) {
-        if (times.isEmpty()) return -1;
+        if (intervalMinutes <= 0 && times.isEmpty()) return -1;
 
         ZonedDateTime after = java.time.Instant.ofEpochMilli(afterMs).atZone(zone);
         LocalDate date = after.toLocalDate();
@@ -70,10 +72,31 @@ public record Settings(
             LocalDate day = date.plusDays(offset);
             if (!days.isEmpty() && !days.contains(day.getDayOfWeek())) continue;
 
-            for (LocalTime time : times) {
-                long slot = day.atTime(time).atZone(zone).toInstant().toEpochMilli();
-                if (slot > afterMs) return slot;
-            }
+            long slot = intervalMinutes > 0 ? firstIntervalSlot(day, afterMs) : firstFixedSlot(day, afterMs);
+            if (slot > afterMs) return slot;
+        }
+
+        return -1;
+    }
+
+    /**
+     * Slots every {@code intervalMinutes} counted from midnight of the zone plus {@code offsetMinutes}, restarting each
+     * day, exactly how CKSMPMobs plans its events (interval 120, offset 30 gives 00:30, 02:30, 04:30, ...).
+     */
+    private long firstIntervalSlot(LocalDate day, long afterMs) {
+        long midnight = day.atStartOfDay(zone).toInstant().toEpochMilli();
+        for (long minute = offsetMinutes; minute < 24 * 60; minute += intervalMinutes) {
+            long slot = midnight + minute * 60_000L;
+            if (slot > afterMs) return slot;
+        }
+
+        return -1;
+    }
+
+    private long firstFixedSlot(LocalDate day, long afterMs) {
+        for (LocalTime time : times) {
+            long slot = day.atTime(time).atZone(zone).toInstant().toEpochMilli();
+            if (slot > afterMs) return slot;
         }
 
         return -1;
@@ -120,6 +143,8 @@ public record Settings(
                 zone,
                 List.copyOf(times),
                 Set.copyOf(days),
+                Math.max(0, c.getInt("schedule.interval-minutes", 0)),
+                Math.max(0, c.getInt("schedule.offset-minutes", 0)),
                 Math.max(1, c.getInt("schedule.announce-seconds", 120)),
                 List.copyOf(announceAt),
                 Math.max(1, c.getInt("schedule.manual-announce-seconds", 30)),

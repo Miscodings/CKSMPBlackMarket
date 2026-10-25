@@ -14,7 +14,8 @@ code was taken from the open-source dark-auction plugins it was compared against
 
 ## Features
 
-- Scheduled events (daily times in a time zone, optional weekday filter) plus manual `/blackmarket start`.
+- Scheduled events on a fixed interval from midnight UTC, like CKSMPMobs (default: every 2 hours at :30), or fixed
+  daily times, with an optional weekday filter, plus manual `/blackmarket start`.
 - Same flow and feel as AxDarkAuctions: countdown announcements, each item is shown for a few seconds before
   bidding opens, a short bid window with anti-snipe extension, per-bid broadcasts, the same wording and colour
   palette, a 6-row menu whose bid button changes material with the amount (iron, gold, diamond, emerald,

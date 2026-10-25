@@ -79,6 +79,28 @@ class LogicTest {
     }
 
     @Test
+    void intervalScheduleMatchesTheMobsStyle() {
+        YamlConfiguration yaml = new YamlConfiguration();
+        yaml.set("schedule.zone", "UTC");
+        yaml.set("schedule.interval-minutes", 120);
+        yaml.set("schedule.offset-minutes", 30);
+        Settings every2h = Settings.parse(yaml, LOG);
+
+        ZoneId utc = ZoneId.of("UTC");
+        long t0100 = ZonedDateTime.of(2026, 10, 25, 1, 0, 0, 0, utc).toInstant().toEpochMilli();
+        long slot = every2h.firstSlotAfter(t0100);
+        assertEquals(ZonedDateTime.of(2026, 10, 25, 2, 30, 0, 0, utc).toInstant().toEpochMilli(), slot);
+        assertEquals(ZonedDateTime.of(2026, 10, 25, 4, 30, 0, 0, utc).toInstant().toEpochMilli(), every2h.firstSlotAfter(slot));
+
+        long t2231 = ZonedDateTime.of(2026, 10, 25, 22, 31, 0, 0, utc).toInstant().toEpochMilli();
+        assertEquals(ZonedDateTime.of(2026, 10, 26, 0, 30, 0, 0, utc).toInstant().toEpochMilli(), every2h.firstSlotAfter(t2231), "rolls into the next day");
+
+        yaml.set("schedule.interval-minutes", 60);
+        Settings hourly = Settings.parse(yaml, LOG);
+        assertEquals(ZonedDateTime.of(2026, 10, 25, 1, 30, 0, 0, utc).toInstant().toEpochMilli(), hourly.firstSlotAfter(t0100));
+    }
+
+    @Test
     void weekdayFilterIsHonoured() {
         YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("schedule.zone", "UTC");

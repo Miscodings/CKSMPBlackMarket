@@ -29,6 +29,8 @@ class ResourcesTest {
     void configMatchesAxDarkAuctionsPacing() {
         Settings s = Settings.parse(load("config.yml"), LOG);
 
+        assertEquals(120, s.intervalMinutes());
+        assertEquals(30, s.offsetMinutes());
         assertEquals(60, s.announceSeconds());
         assertEquals(5, s.previewSeconds());
         assertEquals(15, s.roundSeconds());
