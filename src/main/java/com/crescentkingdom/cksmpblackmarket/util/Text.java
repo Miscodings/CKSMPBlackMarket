@@ -21,16 +21,31 @@ public final class Text {
         return lang.format(lang.raw("money-format"), Placeholder.unparsed("amount", plainMoney(amount)));
     }
 
+    /** "1d 2h 3m 4s", skipping zero units, with the unit letters taken from the lang file's {@code time} section. */
     public static Component time(Lang lang, long seconds) {
+        return Component.text(plainTime(lang, seconds));
+    }
+
+    public static String plainTime(Lang lang, long seconds) {
         seconds = Math.max(0, seconds);
 
-        if (seconds >= 60) {
-            return lang.format(lang.raw("time-format.minutes"),
-                    Placeholder.unparsed("m", Long.toString(seconds / 60)),
-                    Placeholder.unparsed("s", Long.toString(seconds % 60)));
-        }
+        long days = seconds / 86_400;
+        long hours = (seconds % 86_400) / 3_600;
+        long minutes = (seconds % 3_600) / 60;
+        long secs = seconds % 60;
 
-        return lang.format(lang.raw("time-format.seconds"), Placeholder.unparsed("s", Long.toString(seconds)));
+        StringBuilder out = new StringBuilder();
+        append(out, days, lang.raw("time.day"));
+        append(out, hours, lang.raw("time.hour"));
+        append(out, minutes, lang.raw("time.minute"));
+        if (secs > 0 || out.isEmpty()) append(out, secs, lang.raw("time.second"));
+        return out.toString();
+    }
+
+    private static void append(StringBuilder out, long value, String unit) {
+        if (value <= 0) return;
+        if (!out.isEmpty()) out.append(' ');
+        out.append(value).append(unit);
     }
 
     /** Whole seconds remaining until {@code endsAtMs}, rounded up so the display never shows 0s while live. */

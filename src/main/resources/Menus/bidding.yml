@@ -1,43 +1,74 @@
-# Placeholders: <item> <round> <rounds> <current-bid> <next-bid> <start-bid> <leader> <bids> <time> <balance>
+# Same layout and wording as AxDarkAuctions' main.yml / preview.yml.
+# Placeholders: <item> <round> <rounds> <current-bid> <next-bid> <start-bid> <leader> <player> <bids>
+#               <time> (e.g. 1m 5s)  <seconds> (plain number)  <opens-in> (plain number)  <balance>
+#
+# Two phases share one inventory size: `preview` (item on show, bids not open yet) and `bidding`.
+# The `bid` button's material comes from `bid-materials` (by the amount of the next bid); the `leading`
+# button replaces it while the viewer holds the top bid and shows their own head.
 menu:
-  title: "<#c77dff>Black Market"
-  size: 27
-  # Applied to every slot not claimed below. Remove the section to leave gaps.
-  fill:
-    material: BLACK_STAINED_GLASS_PANE
-    name: " "
-  items:
-    reward:
-      function: reward
-      slot: 13
-      # Appended after the prize's own lore.
-      lore:
-        - ""
-        - "<gray>Round <white><round>/<rounds>"
-    info:
-      function: info
-      slot: 11
-      material: CLOCK
-      name: "<#c77dff>Auction"
-      lore:
-        - ""
-        - "<gray>Time left: <white><time>"
-        - "<gray>Bids placed: <white><bids>"
-        - "<gray>Top bidder: <white><leader>"
-        - "<gray>Top bid: <current-bid>"
-    bid:
-      function: bid
-      slot: 15
-      material: GOLD_INGOT
-      name: "<green><bold>Place Bid"
-      lore:
-        - ""
-        - "<gray>Next bid: <next-bid>"
-        - "<gray>Your balance: <balance>"
-        - ""
-        - "<yellow>Click to bid"
-    close:
-      function: close
-      slot: 26
-      material: BARRIER
-      name: "<red>Close"
+  rows: 6
+
+  #fill:
+  #  material: BLACK_STAINED_GLASS_PANE
+  #  name: ' '
+
+  bidding:
+    title: "<black><b>Dark Auction > </b>Bidding"
+    items:
+      reward:
+        function: reward
+        slot: 4
+      clock:
+        function: clock
+        slot: 22
+        material: CLOCK
+        name: "<#D200FF><b>Bidding"
+        lore:
+          - " "
+          - " <#DDDDDD>- <white>Ends in: <#D200FF><seconds> seconds"
+          - " "
+      bid:
+        function: bid
+        slot: 31
+        material: GOLD_INGOT
+        name: "<#D200FF>Bid <#7700FF><next-bid>"
+        lore:
+          - " "
+          - " <#DDDDDD>- <white>Top bid: <#D200FF><current-bid>"
+          - " <#DDDDDD>- <white>Your balance: <#D200FF><balance>"
+          - " "
+          - "<#D200FF><b>> <#D200FF>Click here to place your bid!"
+
+  preview:
+    title: "<black><b>Dark Auction > </b>Next Bid"
+    items:
+      reward:
+        function: reward
+        slot: 4
+      clock:
+        function: clock
+        slot: 22
+        material: CLOCK
+        name: "<#D200FF><b>Bidding"
+        lore:
+          - " "
+          - " <#DDDDDD>- <white>Starts in: <#D200FF><opens-in> seconds"
+          - " "
+          - "<#D200FF><b>> <#D200FF>Get ready!"
+
+  # The number is the next-bid amount where this material starts to be used.
+  bid-materials:
+    '0': IRON_INGOT
+    '10000': GOLD_INGOT
+    '100000': DIAMOND
+    '1000000': EMERALD
+    '10000000': NETHERITE_INGOT
+
+  leading:
+    material: PLAYER_HEAD
+    name: "<#D200FF>Bid <#7700FF><current-bid>"
+    lore:
+      - " "
+      - " <#DDDDDD>- <#D200FF>You <white>already bid this amount!"
+      - " "
+      - "<#D200FF><b>> <#D200FF>You are the top bidder!"

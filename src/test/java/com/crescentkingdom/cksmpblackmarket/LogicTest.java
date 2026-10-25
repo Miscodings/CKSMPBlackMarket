@@ -28,7 +28,7 @@ class LogicTest {
 
     private static RoundView round(long id, int bids, double high, boolean active, long endsAt) {
         UUID bidder = bids == 0 ? null : UUID.randomUUID();
-        return new RoundView(id, "x", 1, 3, 100, high, bidder, bidder == null ? null : "Bob", bids, endsAt, active);
+        return new RoundView(id, "x", 1, 3, 100, high, bidder, bidder == null ? null : "Bob", bids, 0, endsAt, active);
     }
 
     private static PoolEntry entry(double start, double minInc, double pct) {

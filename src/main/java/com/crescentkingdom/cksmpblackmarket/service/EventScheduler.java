@@ -50,6 +50,7 @@ public final class EventScheduler {
     private long lastSlotAt;
     private EventRow event;
     private int announceIdx;
+    private long openedRoundId = -1;
     private boolean warnedEmptyPool;
 
     public EventScheduler(CKSMPBlackMarket plugin, String holder) {
@@ -147,7 +148,11 @@ public final class EventScheduler {
         event = db().loadOpenEvent();
 
         RoundView active = db().loadActiveRound();
-        if (active != null) plugin.state().apply(active);
+        if (active != null) {
+            plugin.state().apply(active);
+            // Already open before we took over: do not announce it a second time.
+            if (now >= active.opensAt()) openedRoundId = active.id();
+        }
 
         if (event != null && event.state() == State.ANNOUNCING) {
             int remaining = (int) Math.ceil((event.nextAt() - now) / 1000.0);
@@ -246,7 +251,7 @@ public final class EventScheduler {
 
         long untilStart = Math.max(1, (startAt - now) / 1000);
         discord("discord.event-start",
-                Placeholder.component("time", Text.time(cfg.lang(), untilStart)),
+                Placeholder.unparsed("seconds", Long.toString(untilStart)),
                 Placeholder.unparsed("rounds", Integer.toString(ids.size())));
     }
 
@@ -275,6 +280,11 @@ public final class EventScheduler {
         RoundView current = plugin.state().current();
 
         if (current != null && current.active()) {
+            if (openedRoundId != current.id() && now >= current.opensAt()) {
+                openedRoundId = current.id();
+                plugin.sync().publishBiddingOpen(current);
+            }
+
             if (now >= current.endsAt()) endRound(cfg, current, now);
             return;
         }
@@ -299,7 +309,8 @@ public final class EventScheduler {
             return;
         }
 
-        RoundView round = db().insertRound(event.id(), entry, idx + 1, ids.size(), cfg.settings().roundSeconds() * 1000L);
+        RoundView round = db().insertRound(event.id(), entry, idx + 1, ids.size(),
+                cfg.settings().previewSeconds() * 1000L, cfg.settings().roundSeconds() * 1000L);
         if (round == null) {
             event = db().loadOpenEvent();
             return;

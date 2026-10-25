@@ -35,10 +35,14 @@ public final class BossBarService {
             return;
         }
 
-        bar.name(cfg.lang().component("bossbar.title", TagResolver.resolver(
+        boolean preview = round.isPreviewAt(now);
+        bar.name(cfg.lang().component(preview ? "bossbar.preview" : "bossbar.title", TagResolver.resolver(
                 RoundText.resolver(plugin, cfg, round, now),
                 Placeholder.component("amount", Text.money(cfg.lang(), round.highBid())))));
-        bar.progress((float) Math.max(0.0, Math.min(1.0, (round.endsAt() - now) / (s.roundSeconds() * 1000.0))));
+
+        double span = preview ? s.previewSeconds() * 1000.0 : s.roundSeconds() * 1000.0;
+        long until = preview ? round.opensAt() : round.endsAt();
+        bar.progress((float) Math.max(0.0, Math.min(1.0, (until - now) / Math.max(1.0, span))));
         bar.color(s.bossBarColor());
         bar.overlay(s.bossBarOverlay());
 

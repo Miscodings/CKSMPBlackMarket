@@ -1,5 +1,6 @@
-# CKSMPBlackMarket - network-wide black market auctions.
-# Every shard must carry the same file. State lives in CKSMPCore's Postgres; shards are synced over Redis.
+# CKSMPBlackMarket - network-wide black market auctions (the AxDarkAuctions successor for Crescent Kingdom).
+# Keep this file identical on every shard. State lives in CKSMPCore's Postgres; shards are synced over Redis.
+# Prizes are managed in-game with /blackmarket editor (items.yml only seeds an empty database once).
 
 # Show broadcasts / boss bar / menu on this shard.
 participate: true
@@ -10,18 +11,19 @@ leader:
   eligible: true
   lease-seconds: 15
 
+# ----- when events happen -----
 schedule:
   zone: "America/New_York"
-  # Daily start times (HH:mm, 24h) in the zone above. Empty list = manual starts only.
+  # Daily start times (HH:mm, 24h) in the zone above. Empty list = manual starts only (/blackmarket start).
   times:
     - "18:00"
     - "21:30"
   # Restrict to days of the week (MONDAY..SUNDAY). Empty = every day.
   days: []
-  # Announcement window before the first round of a scheduled event.
-  announce-seconds: 120
-  # Seconds-remaining marks that trigger a countdown broadcast.
-  announce-at: [120, 60, 30, 10]
+  # How long before the first item the event is announced (AxDarkAuctions: start-wait-time).
+  announce-seconds: 60
+  # Seconds-remaining marks that send the "is starting in X seconds" broadcast (AxDarkAuctions: starting-broadcast).
+  announce-at: [60, 50, 40, 30, 20, 10]
   # Announcement window for /blackmarket start.
   manual-announce-seconds: 30
   # A slot missed by more than this (server was down) is skipped, not run late.
@@ -30,20 +32,27 @@ schedule:
   min-online-players: 1
 
 event:
+  # How many items are auctioned per event.
   rounds: 5
-  break-seconds: 15
+  # Wait between the winner announcement and the next item (AxDarkAuctions: time-between-bids).
+  break-seconds: 5
 
+# ----- one item -----
 round:
-  duration-seconds: 90
-  # A bid placed with less than window-seconds left pushes the end to extend-seconds from now.
+  # The item is shown but cannot be bid on yet (AxDarkAuctions: show-time).
+  preview-seconds: 5
+  # How long it can be bid on (AxDarkAuctions: bid-time).
+  duration-seconds: 15
+  # A bid placed with less than window-seconds left pushes the end to extend-seconds from now
+  # (AxDarkAuctions: extend-bid-time / extend-time).
   anti-snipe:
-    window-seconds: 10
-    extend-seconds: 10
+    window-seconds: 8
+    extend-seconds: 8
 
 bidding:
   cooldown-ms: 750
-  # Broadcast every bid server-wide. Off by default (spammy); the outbid player is always notified.
-  broadcast-bids: false
+  # Broadcast every bid, like AxDarkAuctions does. Players can opt out with the announcement setting below.
+  broadcast-bids: true
 
 history:
   size: 8
@@ -74,6 +83,7 @@ bossbar:
 sounds:
   event-announce: { sound: "minecraft:block.bell.use", source: MASTER, volume: 0.8, pitch: 0.7 }
   round-start: { sound: "minecraft:block.end_portal.spawn", source: MASTER, volume: 0.4, pitch: 1.4 }
+  bidding-open: { sound: "minecraft:block.note_block.pling", source: MASTER, volume: 0.8, pitch: 1.2 }
   bid-success: { sound: "minecraft:entity.experience_orb.pickup", source: MASTER, volume: 1.0, pitch: 1.3 }
   bid-fail: { sound: "minecraft:entity.villager.no", source: MASTER, volume: 1.0, pitch: 1.0 }
   outbid: { sound: "minecraft:block.note_block.bass", source: MASTER, volume: 1.0, pitch: 0.6 }

@@ -1,14 +1,15 @@
 # SEED ONLY. Prizes live in the database and are managed in-game with /blackmarket editor.
 # This file is imported once, when the prize table is empty, so a fresh install has something to run.
-# After that, edits here are ignored.
+# After that, edits here are ignored. Replace these samples with your real prizes in the editor
+# (drop an item into /blackmarket editor and it is saved exactly as it is, custom enchants included).
 #
-# Each event draws `event.rounds` entries without replacement, weighted by `weight`.
+# Each event draws "event.rounds" entries without replacement, weighted by "weight".
 #
 # reward.items entries use either:
 #   cksmp-item: <CKSMPItems id>      (any item registered in CKSMPItems)
 #   material:   <VANILLA_MATERIAL>
 # reward.commands run from console; <player> is the winner's name.
-# `display` is the icon in the bidding menu; omitted fields fall back to the first reward item.
+# "display" is the icon in the bidding menu; omitted fields fall back to the first reward item.
 # Bid maths: first bid = start-bid, then current + max(min-increment, current * increment-percent).
 pool:
   enchanted_apples:
@@ -17,9 +18,9 @@ pool:
     min-increment: 250
     increment-percent: 0.05
     display:
-      name: "<#c77dff>Enchanted Golden Apple Stash"
+      name: "<#D200FF>Enchanted Golden Apple Stash"
       lore:
-        - "<#9d8ab5>Eight apples that shrug off death."
+        - "<#DDDDDD>Eight apples that shrug off death."
     reward:
       items:
         - { material: ENCHANTED_GOLDEN_APPLE, amount: 8 }
@@ -31,23 +32,23 @@ pool:
     increment-percent: 0.05
     display:
       material: NETHERITE_INGOT
-      name: "<#c77dff>Netherite Cache"
+      name: "<#D200FF>Netherite Cache"
       lore:
-        - "<#9d8ab5>Eight ingots, no questions asked."
+        - "<#DDDDDD>Eight ingots, no questions asked."
     reward:
       items:
         - { material: NETHERITE_INGOT, amount: 8 }
 
-  crate_key_bundle:
-    weight: 10
-    start-bid: 15000
-    min-increment: 1500
+  totem_bundle:
+    weight: 20
+    start-bid: 5000
+    min-increment: 500
     increment-percent: 0.05
     display:
-      material: TRIPWIRE_HOOK
-      name: "<#c77dff>Mystery Key Bundle"
+      material: TOTEM_OF_UNDYING
+      name: "<#D200FF>Totem Bundle"
       lore:
-        - "<#9d8ab5>Three keys, delivered by console command."
+        - "<#DDDDDD>Three second chances."
     reward:
-      commands:
-        - "crate key give <player> mystery 3"
+      items:
+        - { material: TOTEM_OF_UNDYING, amount: 3 }

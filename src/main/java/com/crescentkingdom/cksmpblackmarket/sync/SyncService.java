@@ -31,6 +31,7 @@ public final class SyncService {
     private static final String CANCEL = "cancel";
     private static final String CONTROL = "control";
     private static final String PRIZES = "prizes";
+    private static final String OPEN = "open";
 
     private final CKSMPBlackMarket plugin;
 
@@ -46,6 +47,13 @@ public final class SyncService {
 
     public void publishRoundStart(RoundView round) {
         JsonObject json = message(ROUND_START);
+        json.add("round", round.toJson());
+        publish(json);
+    }
+
+    /** The preview ended and bids are now accepted. */
+    public void publishBiddingOpen(RoundView round) {
+        JsonObject json = message(OPEN);
         json.add("round", round.toJson());
         publish(json);
     }
@@ -119,6 +127,7 @@ public final class SyncService {
             switch (type) {
                 case ROUND_START -> onRoundStart(RoundView.fromJson(data.getAsJsonObject("round")));
                 case BID -> onBid(data);
+                case OPEN -> onBiddingOpen(RoundView.fromJson(data.getAsJsonObject("round")));
                 case ROUND_END -> onRoundEnd(RoundView.fromJson(data.getAsJsonObject("round")));
                 case ANNOUNCE -> onAnnounce(data.get("seconds").getAsInt(), data.get("rounds").getAsInt());
                 case EVENT_END -> onEventEnd();
@@ -129,7 +138,7 @@ public final class SyncService {
             }
 
             // Anything that changed the round must show up in open menus immediately, not at the next tick.
-            if (type.equals(ROUND_START) || type.equals(BID) || type.equals(ROUND_END) || type.equals(CANCEL)) {
+            if (type.equals(ROUND_START) || type.equals(OPEN) || type.equals(BID) || type.equals(ROUND_END) || type.equals(CANCEL)) {
                 onGlobal(plugin.gui()::refreshAll);
             }
         } catch (Exception err) {
@@ -143,8 +152,27 @@ public final class SyncService {
 
         onGlobal(() -> {
             Config cfg = plugin.config();
-            cfg.lang().sendLines(plugin.audiences().announcements(), "round.start", RoundText.resolver(plugin, cfg, round, System.currentTimeMillis()));
-            cfg.play(plugin.audiences().announcements(), "round-start");
+            var audience = plugin.audiences().announcements();
+
+            if (round.roundNo() == 1) cfg.lang().send(audience, "event.started");
+
+            // The item is on show; bids open once the preview is over.
+            cfg.lang().send(audience, "round.showing", RoundText.resolver(plugin, cfg, round, System.currentTimeMillis()));
+            cfg.play(audience, "round-start");
+            plugin.bossBar().update();
+        });
+    }
+
+    private void onBiddingOpen(RoundView round) {
+        plugin.state().apply(round);
+        if (!plugin.config().settings().participate()) return;
+
+        onGlobal(() -> {
+            Config cfg = plugin.config();
+            var audience = plugin.audiences().announcements();
+
+            cfg.lang().send(audience, "round.bidding", RoundText.resolver(plugin, cfg, round, System.currentTimeMillis()));
+            cfg.play(audience, "bidding-open");
             plugin.bossBar().update();
         });
     }
@@ -194,12 +222,16 @@ public final class SyncService {
 
             plugin.bossBar().update();
 
-            if (round.highBidder() == null) {
-                cfg.lang().send(plugin.audiences().announcements(), "round.no-bids", tags);
-                return;
+            var audience = plugin.audiences().announcements();
+
+            if (round.highBidder() == null) cfg.lang().send(audience, "round.no-bids", tags);
+            else cfg.lang().send(audience, "round.won", tags);
+
+            if (round.roundNo() < round.roundTotal()) {
+                cfg.lang().send(audience, "round.waiting", Placeholder.unparsed("seconds", Integer.toString(cfg.settings().breakSeconds())));
             }
 
-            cfg.lang().send(plugin.audiences().announcements(), "round.won", tags);
+            if (round.highBidder() == null) return;
 
             Player winner = Bukkit.getPlayer(round.highBidder());
             if (winner != null) {
@@ -219,6 +251,7 @@ public final class SyncService {
             Config cfg = plugin.config();
             cfg.lang().sendLines(plugin.audiences().announcements(), "event.announce",
                     Placeholder.component("time", Text.time(cfg.lang(), seconds)),
+                    Placeholder.unparsed("seconds", Integer.toString(seconds)),
                     Placeholder.unparsed("rounds", Integer.toString(rounds)));
             cfg.play(plugin.audiences().announcements(), "event-announce");
         });

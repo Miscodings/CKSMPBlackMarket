@@ -29,7 +29,7 @@ public final class BlackMarketDb {
 
     private static final String NOW = "(extract(epoch from clock_timestamp())*1000)::bigint";
     private static final String ROUND_COLS =
-            "id, entry_id, round_no, round_total, start_bid, high_bid, high_bidder, high_bidder_name, bid_count, ends_at, state";
+            "id, entry_id, round_no, round_total, start_bid, high_bid, high_bidder, high_bidder_name, bid_count, bids_open_at, ends_at, state";
     private static final String UNIQUE_VIOLATION = "23505";
 
     private final DatabaseManager core;
@@ -61,7 +61,8 @@ public final class BlackMarketDb {
         try (Connection c = core.getConnection(); Statement s = c.createStatement()) {
             s.execute("CREATE TABLE IF NOT EXISTS cksmpbm_event(id BIGSERIAL PRIMARY KEY, state VARCHAR(12) NOT NULL, slot_at BIGINT NOT NULL DEFAULT 0, pool_ids TEXT NOT NULL, round_index INTEGER NOT NULL DEFAULT -1, next_at BIGINT NOT NULL, created_at BIGINT NOT NULL)");
             s.execute("CREATE UNIQUE INDEX IF NOT EXISTS cksmpbm_event_slot_idx ON cksmpbm_event(slot_at) WHERE slot_at > 0");
-            s.execute("CREATE TABLE IF NOT EXISTS cksmpbm_round(id BIGSERIAL PRIMARY KEY, event_id BIGINT NOT NULL, round_no INTEGER NOT NULL, round_total INTEGER NOT NULL, entry_id VARCHAR(64) NOT NULL, state VARCHAR(8) NOT NULL, start_bid DECIMAL(20,2) NOT NULL, high_bid DECIMAL(20,2) NOT NULL DEFAULT 0, high_bidder VARCHAR(36), high_bidder_name VARCHAR(32), bid_count INTEGER NOT NULL DEFAULT 0, cancelled BOOLEAN NOT NULL DEFAULT FALSE, started_at BIGINT NOT NULL, ends_at BIGINT NOT NULL, ended_at BIGINT)");
+            s.execute("CREATE TABLE IF NOT EXISTS cksmpbm_round(id BIGSERIAL PRIMARY KEY, event_id BIGINT NOT NULL, round_no INTEGER NOT NULL, round_total INTEGER NOT NULL, entry_id VARCHAR(64) NOT NULL, state VARCHAR(8) NOT NULL, start_bid DECIMAL(20,2) NOT NULL, high_bid DECIMAL(20,2) NOT NULL DEFAULT 0, high_bidder VARCHAR(36), high_bidder_name VARCHAR(32), bid_count INTEGER NOT NULL DEFAULT 0, cancelled BOOLEAN NOT NULL DEFAULT FALSE, started_at BIGINT NOT NULL, bids_open_at BIGINT NOT NULL DEFAULT 0, ends_at BIGINT NOT NULL, ended_at BIGINT)");
+            s.execute("ALTER TABLE cksmpbm_round ADD COLUMN IF NOT EXISTS bids_open_at BIGINT NOT NULL DEFAULT 0");
             s.execute("CREATE UNIQUE INDEX IF NOT EXISTS cksmpbm_round_event_idx ON cksmpbm_round(event_id, round_no)");
             s.execute("CREATE INDEX IF NOT EXISTS cksmpbm_round_active_idx ON cksmpbm_round(state) WHERE state = 'ACTIVE'");
             s.execute("CREATE INDEX IF NOT EXISTS cksmpbm_round_ended_idx ON cksmpbm_round(ended_at DESC) WHERE state = 'ENDED'");
@@ -159,9 +160,9 @@ public final class BlackMarketDb {
     // ---------------------------------------------------------------- rounds
 
     /** Opens a round, or returns null when another leader already opened this round number. */
-    public RoundView insertRound(long eventId, PoolEntry entry, int roundNo, int roundTotal, long durationMs) throws SQLException {
-        String sql = "INSERT INTO cksmpbm_round(event_id, round_no, round_total, entry_id, state, start_bid, started_at, ends_at) "
-                + "VALUES (?, ?, ?, ?, 'ACTIVE', ?, " + NOW + ", " + NOW + " + ?) RETURNING " + ROUND_COLS;
+    public RoundView insertRound(long eventId, PoolEntry entry, int roundNo, int roundTotal, long previewMs, long durationMs) throws SQLException {
+        String sql = "INSERT INTO cksmpbm_round(event_id, round_no, round_total, entry_id, state, start_bid, started_at, bids_open_at, ends_at) "
+                + "VALUES (?, ?, ?, ?, 'ACTIVE', ?, " + NOW + ", " + NOW + " + ?, " + NOW + " + ?) RETURNING " + ROUND_COLS;
 
         try (Connection c = core.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setLong(1, eventId);
@@ -169,7 +170,8 @@ public final class BlackMarketDb {
             ps.setInt(3, roundTotal);
             ps.setString(4, entry.id());
             ps.setBigDecimal(5, BigDecimal.valueOf(entry.startBid()));
-            ps.setLong(6, durationMs);
+            ps.setLong(6, previewMs);
+            ps.setLong(7, previewMs + durationMs);
 
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
@@ -217,11 +219,11 @@ public final class BlackMarketDb {
         String sql = "WITH prev AS (SELECT id, high_bid, high_bidder, bid_count FROM cksmpbm_round WHERE id = ? AND state = 'ACTIVE' FOR UPDATE) "
                 + "UPDATE cksmpbm_round r SET high_bid = ?, high_bidder = ?, high_bidder_name = ?, bid_count = prev.bid_count + 1, "
                 + "ends_at = CASE WHEN r.ends_at - " + NOW + " < ? THEN GREATEST(r.ends_at, " + NOW + " + ?) ELSE r.ends_at END "
-                + "FROM prev WHERE r.id = prev.id AND r.ends_at > " + NOW + " "
+                + "FROM prev WHERE r.id = prev.id AND r.ends_at > " + NOW + " AND r.bids_open_at <= " + NOW + " "
                 + "AND prev.high_bidder IS DISTINCT FROM ? "
                 + "AND ? >= CASE WHEN prev.bid_count = 0 THEN r.start_bid ELSE prev.high_bid + GREATEST(?, prev.high_bid * ?) END "
                 + "RETURNING prev.high_bid AS prev_bid, prev.high_bidder AS prev_bidder, "
-                + "r.id, r.entry_id, r.round_no, r.round_total, r.start_bid, r.high_bid, r.high_bidder, r.high_bidder_name, r.bid_count, r.ends_at, r.state";
+                + "r.id, r.entry_id, r.round_no, r.round_total, r.start_bid, r.high_bid, r.high_bidder, r.high_bidder_name, r.bid_count, r.bids_open_at, r.ends_at, r.state";
 
         try (Connection c = core.getConnection()) {
             c.setAutoCommit(false);
@@ -460,6 +462,7 @@ public final class BlackMarketDb {
                 bidder == null ? null : UUID.fromString(bidder),
                 rs.getString(prefix + "high_bidder_name"),
                 rs.getInt(prefix + "bid_count"),
+                rs.getLong(prefix + "bids_open_at"),
                 rs.getLong(prefix + "ends_at"),
                 "ACTIVE".equals(rs.getString(prefix + "state"))
         );

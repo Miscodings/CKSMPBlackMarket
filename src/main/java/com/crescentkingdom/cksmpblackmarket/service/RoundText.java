@@ -36,7 +36,11 @@ public final class RoundText {
                 lazy("leader", () -> v.highBidder() == null
                         ? cfg.lang().format(cfg.lang().raw("no-leader-name"))
                         : Component.text(v.highBidderName())),
-                lazy("time", () -> Text.time(cfg.lang(), v.active() ? Text.secondsUntil(v.endsAt(), nowMs) : 0))
+                lazy("time", () -> Text.time(cfg.lang(), v.active() ? Text.secondsUntil(v.endsAt(), nowMs) : 0)),
+                // Plain numbers for sentences like "<seconds> seconds left", as AxDarkAuctions words them.
+                Placeholder.unparsed("seconds", Long.toString(v.active() ? Text.secondsUntil(v.endsAt(), nowMs) : 0)),
+                Placeholder.unparsed("opens-in", Long.toString(v.active() ? Text.secondsUntil(v.opensAt(), nowMs) : 0)),
+                lazy("opens-in-time", () -> Text.time(cfg.lang(), v.active() ? Text.secondsUntil(v.opensAt(), nowMs) : 0))
         );
     }
 

@@ -67,6 +67,11 @@ public final class BidService {
             return;
         }
 
+        if (!round.isBiddableAt(now)) {
+            fail(player, cfg, "bid.not-open");
+            return;
+        }
+
         UUID uuid = player.getUniqueId();
         if (uuid.equals(round.highBidder())) {
             fail(player, cfg, "bid.already-leading");
@@ -79,7 +84,8 @@ public final class BidService {
         double amount = entry.nextBid(round);
         TagResolver amountTag = Placeholder.component("amount", Text.money(cfg.lang(), amount));
         if (!plugin.economy().has(player, amount)) {
-            fail(player, cfg, "bid.insufficient", amountTag);
+            fail(player, cfg, "bid.insufficient", amountTag,
+                    Placeholder.component("balance", Text.money(cfg.lang(), plugin.economy().getBalance(player))));
             return;
         }
 

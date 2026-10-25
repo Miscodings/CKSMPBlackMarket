@@ -35,9 +35,10 @@ public final class GuiService {
 
         player.getScheduler().run(plugin, task -> {
             BiddingGui gui = new BiddingGui(plugin, player, cfg);
-            viewers.put(player.getUniqueId(), gui);
 
+            // Opening replaces any menu the player had, whose close handler would otherwise drop this entry.
             plugin.core().getGUIManager().setGUI(player, gui);
+            viewers.put(player.getUniqueId(), gui);
             gui.render();
             cfg.play(player, "menu-open");
         }, null);
@@ -47,6 +48,11 @@ public final class GuiService {
 
     public void remove(UUID uuid) {
         viewers.remove(uuid);
+    }
+
+    /** Close handler of a specific menu: only forgets the player if that menu is still the tracked one. */
+    public void remove(UUID uuid, BiddingGui gui) {
+        viewers.remove(uuid, gui);
     }
 
     /** Re-renders every open menu on its owner's thread. Cheap when nothing visible changed. */
@@ -61,7 +67,10 @@ public final class GuiService {
             }
 
             BiddingGui gui = entry.getValue();
-            player.getScheduler().run(plugin, task -> gui.render(), () -> viewers.remove(entry.getKey()));
+            player.getScheduler().run(plugin, task -> {
+                // Preview -> bidding changes the layout, so the inventory is rebuilt (same size, no flicker to a closed state).
+                if (!gui.render()) open(player);
+            }, () -> viewers.remove(entry.getKey()));
         }
     }
 

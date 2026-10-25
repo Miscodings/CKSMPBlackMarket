@@ -4,7 +4,10 @@ import com.google.gson.JsonObject;
 
 import java.util.UUID;
 
-/** Immutable snapshot of one auction round; the unit that is cached per shard and sent over Redis. */
+/**
+ * Immutable snapshot of one auction round; the unit that is cached per shard and sent over Redis.
+ * A round is first previewed (visible, not biddable) and opens for bids at {@code opensAt}.
+ */
 public record RoundView(
         long id,
         String entryId,
@@ -15,20 +18,26 @@ public record RoundView(
         UUID highBidder,
         String highBidderName,
         int bidCount,
+        long opensAt,
         long endsAt,
         boolean active
 ) {
 
     public RoundView withEndsAt(long newEndsAt) {
-        return new RoundView(id, entryId, roundNo, roundTotal, startBid, highBid, highBidder, highBidderName, bidCount, newEndsAt, active);
-    }
-
-    public RoundView closed() {
-        return new RoundView(id, entryId, roundNo, roundTotal, startBid, highBid, highBidder, highBidderName, bidCount, endsAt, false);
+        return new RoundView(id, entryId, roundNo, roundTotal, startBid, highBid, highBidder, highBidderName, bidCount, opensAt, newEndsAt, active);
     }
 
     public boolean isActiveAt(long nowMs) {
         return active && endsAt > nowMs;
+    }
+
+    /** Visible but not yet biddable. */
+    public boolean isPreviewAt(long nowMs) {
+        return isActiveAt(nowMs) && nowMs < opensAt;
+    }
+
+    public boolean isBiddableAt(long nowMs) {
+        return isActiveAt(nowMs) && nowMs >= opensAt;
     }
 
     public JsonObject toJson() {
@@ -44,6 +53,7 @@ public record RoundView(
             json.addProperty("bidderName", highBidderName);
         }
         json.addProperty("bids", bidCount);
+        json.addProperty("opensAt", opensAt);
         json.addProperty("endsAt", endsAt);
         json.addProperty("active", active);
         return json;
@@ -61,6 +71,7 @@ public record RoundView(
                 bidder,
                 bidder == null ? null : json.get("bidderName").getAsString(),
                 json.get("bids").getAsInt(),
+                json.get("opensAt").getAsLong(),
                 json.get("endsAt").getAsLong(),
                 json.get("active").getAsBoolean()
         );

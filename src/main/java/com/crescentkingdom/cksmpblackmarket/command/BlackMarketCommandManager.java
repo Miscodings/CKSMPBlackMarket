@@ -34,6 +34,7 @@ public final class BlackMarketCommandManager implements CommandManagers {
         commands.add(() -> control("skip", "SKIP", "admin.skip-sent"));
         commands.add(this::reload);
         commands.add(this::editor);
+        commands.add(this::help);
 
         register();
     }
@@ -50,7 +51,7 @@ public final class BlackMarketCommandManager implements CommandManagers {
 
     private void register() {
         CommandAPICommand root = new CommandAPICommand(name())
-                .withAliases("bm", "darkauction")
+                .withAliases("bm", "da", "darkauction", "darkauctions")
                 .withPermission("cksmpblackmarket.commands.open")
                 .executesPlayer((player, args) -> {
                     plugin.gui().open(player);
@@ -93,6 +94,7 @@ public final class BlackMarketCommandManager implements CommandManagers {
 
     private CommandAPICommand status() {
         return new CommandAPICommand("status")
+                .withAliases("info")
                 .withPermission("cksmpblackmarket.commands.status")
                 .executes((sender, args) -> {
                     Config cfg = plugin.config();
@@ -131,6 +133,17 @@ public final class BlackMarketCommandManager implements CommandManagers {
                         plugin.sync().publishControl(action);
                         cfg.lang().send(sender, sentKey);
                     });
+                });
+    }
+
+    /** Player commands for everyone, admin commands only for those who could run them (as AxDarkAuctions does). */
+    private CommandAPICommand help() {
+        return new CommandAPICommand("help")
+                .withPermission("cksmpblackmarket.commands.open")
+                .executes((sender, args) -> {
+                    Config cfg = plugin.config();
+                    cfg.lang().sendLines(sender, "help.player");
+                    if (sender.hasPermission("cksmpblackmarket.commands.admin.start")) cfg.lang().sendLines(sender, "help.admin");
                 });
     }
 

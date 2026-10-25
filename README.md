@@ -15,7 +15,11 @@ code was taken from the open-source dark-auction plugins it was compared against
 ## Features
 
 - Scheduled events (daily times in a time zone, optional weekday filter) plus manual `/blackmarket start`.
-- Countdown announcements, one round per prize, break between rounds, anti-snipe extension.
+- Same flow and feel as AxDarkAuctions: countdown announcements, each item is shown for a few seconds before
+  bidding opens, a short bid window with anti-snipe extension, per-bid broadcasts, the same wording and colour
+  palette, a 6-row menu whose bid button changes material with the amount (iron, gold, diamond, emerald,
+  netherite) and shows your own head while you lead. Defaults mirror AxDarkAuctions' timings.
+- Commands answer to the same aliases: `/blackmarket`, `/bm`, `/da`, `/darkauction`, `/darkauctions`.
 - Weighted prize pool (`items.yml`): CKSMPItems ids, vanilla materials and/or console commands.
 - Bids are charged through Vault (CKSMPCore's economy); outbid players are refunded automatically.
 - Winners get the prize wherever they are; offline winners receive it on next login. Full inventories overflow
@@ -75,6 +79,9 @@ menu re-renders only the slots whose text changed; the scheduler tick is a few t
 touches the database on a state change or lease renewal.
 
 ## Installation
+
+**Remove AxDarkAuctions first.** Both plugins register `/bm`, `/da` and `/darkauction`, so running them side by
+side makes the commands ambiguous.
 
 1. Build with `./gradlew build` and drop `build/libs/CKSMPBlackMarket-1.0.0.jar` into `plugins/` on every shard.
    Config files are written on first start. **Keep `config.yml`, `items.yml`, `Lang/` and `Menus/` identical on every shard.**
