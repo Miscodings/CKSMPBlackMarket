@@ -49,7 +49,8 @@ public final class BidService {
         CompletableFuture<Void> pending = inFlight.get(uuid);
         if (pending == null) return CompletableFuture.completedFuture(null);
 
-        return pending.orTimeout(10, TimeUnit.SECONDS).exceptionally(err -> null);
+        // Time out a copy: timing out the shared future itself would drop the in-flight entry while the bid is still running.
+        return pending.copy().orTimeout(10, TimeUnit.SECONDS).exceptionally(err -> null);
     }
 
     /** Call on the player's thread (menu click handler). */
@@ -81,34 +82,38 @@ public final class BidService {
             return;
         }
 
-        if (inFlight.containsKey(uuid)) return;
+        // Claimed before the wallet is touched, and completed only once the bid AND any refund have finished,
+        // so the save hook covers the whole charge -> settle -> refund window.
+        CompletableFuture<Void> settled = new CompletableFuture<>();
+        if (inFlight.putIfAbsent(uuid, settled) != null) return;
         lastBidMs.put(uuid, now);
 
         EconomyResponse charge = plugin.economy().withdrawPlayer(player, amount);
         if (!charge.transactionSuccess()) {
+            release(uuid, settled);
             fail(player, cfg, "bid.withdraw-failed");
             return;
         }
 
         String name = player.getName();
-        CompletableFuture<Void> settled = plugin.db().async(() -> plugin.db().placeBid(
+        plugin.db().async(() -> plugin.db().placeBid(
                 round.id(), uuid, name, BigDecimal.valueOf(amount), entry,
                 settings.snipeWindowSeconds() * 1000L, settings.snipeExtendSeconds() * 1000L
         )).handle((outcome, err) -> {
             if (err != null) {
                 plugin.getLogger().log(Level.SEVERE, "Bid failed for " + name, err);
-                refund(uuid, amount, "bid.error");
-            } else if (!outcome.accepted()) {
-                refund(uuid, amount, "bid.outraced");
-            } else {
-                accepted(player, outcome, amount, entry);
+                return refund(uuid, amount, "bid.error");
             }
+            if (!outcome.accepted()) return refund(uuid, amount, "bid.outraced");
 
-            return null;
-        });
+            accepted(player, outcome, amount, entry);
+            return CompletableFuture.<Void>completedFuture(null);
+        }).thenCompose(refunded -> refunded).whenComplete((ignored, err) -> release(uuid, settled));
+    }
 
-        inFlight.put(uuid, settled);
-        settled.whenComplete((ignored, err) -> inFlight.remove(uuid, settled));
+    private void release(UUID uuid, CompletableFuture<Void> settled) {
+        settled.complete(null);
+        inFlight.remove(uuid, settled);
     }
 
     private void accepted(Player player, BidOutcome outcome, double amount, PoolEntry entry) {
@@ -127,32 +132,36 @@ public final class BidService {
     }
 
     /** Returns a charged amount: straight to the wallet if the player is still here, else via the ledger. */
-    private void refund(UUID uuid, double amount, String messageKey) {
+    private CompletableFuture<Void> refund(UUID uuid, double amount, String messageKey) {
         Config cfg = plugin.config();
         Player player = Bukkit.getPlayer(uuid);
+        if (player == null) return viaLedger(uuid, amount);
 
-        Runnable viaLedger = () -> plugin.db().async(() -> {
-            plugin.db().insertPayout(uuid, "MONEY", amount, null);
-            return null;
-        }).exceptionally(err -> {
-            plugin.getLogger().log(Level.SEVERE, "COULD NOT REFUND " + amount + " to " + uuid, err);
-            return null;
-        });
-
-        if (player == null) {
-            viaLedger.run();
-            return;
-        }
+        // Completes only after the deposit or the ledger insert has actually finished.
+        CompletableFuture<Void> done = new CompletableFuture<>();
 
         player.getScheduler().run(plugin, task -> {
             if (!plugin.economy().depositPlayer(player, amount).transactionSuccess()) {
-                viaLedger.run();
+                viaLedger(uuid, amount).whenComplete((ignored, err) -> done.complete(null));
                 return;
             }
 
             cfg.lang().send(player, messageKey, Placeholder.component("amount", Text.money(cfg.lang(), amount)));
             cfg.play(player, "bid-fail");
-        }, viaLedger);
+            done.complete(null);
+        }, () -> viaLedger(uuid, amount).whenComplete((ignored, err) -> done.complete(null)));
+
+        return done;
+    }
+
+    private CompletableFuture<Void> viaLedger(UUID uuid, double amount) {
+        return plugin.db().async(() -> {
+            plugin.db().insertPayout(uuid, "MONEY", amount, null);
+            return (Void) null;
+        }).exceptionally(err -> {
+            plugin.getLogger().log(Level.SEVERE, "COULD NOT REFUND " + amount + " to " + uuid, err);
+            return null;
+        });
     }
 
     private void fail(Player player, Config cfg, String key, TagResolver... tags) {
