@@ -15,7 +15,8 @@ import org.bukkit.entity.Player;
 
 import java.math.BigDecimal;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -28,7 +29,7 @@ import java.util.logging.Level;
 public final class BidService {
 
     private final CKSMPBlackMarket plugin;
-    private final Set<UUID> inFlight = ConcurrentHashMap.newKeySet();
+    private final Map<UUID, CompletableFuture<Void>> inFlight = new ConcurrentHashMap<>();
     private final Map<UUID, Long> lastBidMs = new ConcurrentHashMap<>();
 
     public BidService(CKSMPBlackMarket plugin) {
@@ -36,8 +37,19 @@ public final class BidService {
     }
 
     public void forget(UUID uuid) {
-        inFlight.remove(uuid);
         lastBidMs.remove(uuid);
+    }
+
+    /**
+     * Registered as a CKSMPCore save hook: a player's save (and any cross-shard transfer gated on it) waits
+     * for their pending bid to settle, so a withdrawn wallet is never persisted while its bid or refund is
+     * still in flight.
+     */
+    public CompletableFuture<Void> awaitInFlight(UUID uuid) {
+        CompletableFuture<Void> pending = inFlight.get(uuid);
+        if (pending == null) return CompletableFuture.completedFuture(null);
+
+        return pending.orTimeout(10, TimeUnit.SECONDS).exceptionally(err -> null);
     }
 
     /** Call on the player's thread (menu click handler). */
@@ -69,23 +81,20 @@ public final class BidService {
             return;
         }
 
-        if (!inFlight.add(uuid)) return;
+        if (inFlight.containsKey(uuid)) return;
         lastBidMs.put(uuid, now);
 
         EconomyResponse charge = plugin.economy().withdrawPlayer(player, amount);
         if (!charge.transactionSuccess()) {
-            inFlight.remove(uuid);
             fail(player, cfg, "bid.withdraw-failed");
             return;
         }
 
         String name = player.getName();
-        plugin.db().async(() -> plugin.db().placeBid(
+        CompletableFuture<Void> settled = plugin.db().async(() -> plugin.db().placeBid(
                 round.id(), uuid, name, BigDecimal.valueOf(amount), entry,
                 settings.snipeWindowSeconds() * 1000L, settings.snipeExtendSeconds() * 1000L
-        )).whenComplete((outcome, err) -> {
-            inFlight.remove(uuid);
-
+        )).handle((outcome, err) -> {
             if (err != null) {
                 plugin.getLogger().log(Level.SEVERE, "Bid failed for " + name, err);
                 refund(uuid, amount, "bid.error");
@@ -94,7 +103,12 @@ public final class BidService {
             } else {
                 accepted(player, outcome, amount, entry);
             }
+
+            return null;
         });
+
+        inFlight.put(uuid, settled);
+        settled.whenComplete((ignored, err) -> inFlight.remove(uuid, settled));
     }
 
     private void accepted(Player player, BidOutcome outcome, double amount, PoolEntry entry) {

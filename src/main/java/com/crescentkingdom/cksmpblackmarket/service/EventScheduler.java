@@ -8,6 +8,10 @@ import com.crescentkingdom.cksmpblackmarket.model.EventRow.State;
 import com.crescentkingdom.cksmpblackmarket.model.PoolEntry;
 import com.crescentkingdom.cksmpblackmarket.model.RoundView;
 import com.crescentkingdom.cksmpblackmarket.storage.BlackMarketDb;
+import com.crescentkingdom.cksmpblackmarket.util.Text;
+import com.crescentkingdom.cksmpcore.Utils.DiscordRelay;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -59,6 +63,15 @@ public final class EventScheduler {
 
     public void stop() {
         executor.shutdownNow();
+
+        if (leader) {
+            leader = false;
+            try {
+                plugin.db().releaseLease(holder);
+            } catch (SQLException err) {
+                plugin.getLogger().log(Level.WARNING, "Could not release the scheduler lease; it will expire on its own", err);
+            }
+        }
     }
 
     public boolean isLeader() {
@@ -116,7 +129,7 @@ public final class EventScheduler {
         for (String action; (action = controls.poll()) != null; ) control(cfg, action, now);
 
         if (event == null) {
-            maybeBegin(cfg, now);
+            if (!closeOrphanRound(now)) maybeBegin(cfg, now);
             return;
         }
 
@@ -164,13 +177,40 @@ public final class EventScheduler {
             }
             case "SKIP" -> {
                 RoundView current = plugin.state().current();
-                if (current != null && current.active()) db().expireRoundNow(current.id());
+                if (current != null && current.active()) {
+                    long newEnd = db().expireRoundNow(current.id());
+                    // The leader's own cache drives endRound; without this it would wait out the old timer.
+                    if (newEnd >= 0) plugin.state().apply(current.withEndsAt(newEnd));
+                }
             }
             default -> plugin.getLogger().warning("Unknown scheduler control '" + action + "'.");
         }
     }
 
     // ---------------------------------------------------------------- state machine
+
+    /**
+     * A round left active with no open event (the previous leader died between closing the event and the
+     * round) would block bidding forever. Close it through the normal path once its timer is up.
+     */
+    private boolean closeOrphanRound(long now) throws SQLException {
+        RoundView current = plugin.state().current();
+        if (current == null || !current.active()) return false;
+
+        if (now >= current.endsAt()) {
+            RoundView ended = db().endRound(current.id());
+            if (ended != null) {
+                plugin.state().apply(ended);
+                plugin.sync().publishRoundEnd(ended);
+                discordWinner(ended);
+            } else {
+                RoundView fresh = db().loadRound(current.id());
+                if (fresh != null) plugin.state().apply(fresh);
+            }
+        }
+
+        return true;
+    }
 
     private void maybeBegin(Config cfg, long now) throws SQLException {
         Settings s = cfg.settings();
@@ -203,6 +243,11 @@ public final class EventScheduler {
 
         event = created;
         announceIdx = 0;
+
+        long untilStart = Math.max(1, (startAt - now) / 1000);
+        discord("discord.event-start",
+                Placeholder.component("time", Text.time(cfg.lang(), untilStart)),
+                Placeholder.unparsed("rounds", Integer.toString(ids.size())));
     }
 
     private void announcing(Config cfg, long now) throws SQLException {
@@ -279,6 +324,7 @@ public final class EventScheduler {
 
         plugin.state().apply(ended);
         plugin.sync().publishRoundEnd(ended);
+        discordWinner(ended);
 
         if (event.roundIndex() + 1 >= event.poolIds().size()) {
             finishEvent(now);
@@ -308,6 +354,24 @@ public final class EventScheduler {
         db().updateEvent(event.with(State.FINISHED, event.roundIndex(), now));
         event = null;
         plugin.sync().publishCancel(reason, closed);
+    }
+
+    private void discordWinner(RoundView ended) {
+        if (ended.highBidder() == null) return;
+
+        Config cfg = plugin.config();
+        discord("discord.round-won",
+                Placeholder.unparsed("player", String.valueOf(ended.highBidderName())),
+                Placeholder.component("item", plugin.rewards().name(cfg, ended.entryId(), cfg.pool().get(ended.entryId()))),
+                Placeholder.component("amount", Text.money(cfg.lang(), ended.highBid())));
+    }
+
+    /** Posts to the Discord chat relay through CKSMPCore. Leader only, so each message goes out once. */
+    private void discord(String key, TagResolver... tags) {
+        Config cfg = plugin.config();
+        if (!cfg.settings().discordEnabled()) return;
+
+        DiscordRelay.sendSystem(plugin.core().getPluginInstance(), cfg.settings().discordSender(), cfg.lang().plain(key, tags));
     }
 
     private boolean enoughPlayers(Settings s) {

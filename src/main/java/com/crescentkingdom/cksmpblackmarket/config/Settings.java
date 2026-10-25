@@ -44,7 +44,10 @@ public record Settings(
         boolean bossBarEnabled,
         BossBar.Color bossBarColor,
         BossBar.Overlay bossBarOverlay,
-        Map<String, Sound> sounds
+        Map<String, Sound> sounds,
+        String announcementSettingKey,
+        boolean discordEnabled,
+        String discordSender
 ) {
 
     public Sound sound(String key) {
@@ -128,7 +131,10 @@ public record Settings(
                 c.getBoolean("bossbar.enabled", true),
                 color,
                 overlay,
-                parseSounds(c.getConfigurationSection("sounds"), log)
+                parseSounds(c.getConfigurationSection("sounds"), log),
+                c.getString("announcements.setting-key", "blackmarket-announcements"),
+                c.getBoolean("discord.enabled", true),
+                c.getString("discord.sender", "Black Market")
         );
     }
 

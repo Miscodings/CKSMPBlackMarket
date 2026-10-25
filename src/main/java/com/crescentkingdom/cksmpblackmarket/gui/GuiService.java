@@ -15,6 +15,7 @@ import java.util.logging.Level;
 public final class GuiService {
 
     private static final long RESYNC_AFTER_MS = 10_000;
+    private static final long IDLE_RESYNC_AFTER_MS = 30_000;
 
     private final CKSMPBlackMarket plugin;
     private final Map<UUID, BiddingGui> viewers = new ConcurrentHashMap<>();
@@ -66,8 +67,6 @@ public final class GuiService {
 
     /** Once-a-second tick: countdown refresh, plus a database check if no packet has arrived for a while. */
     public void tick() {
-        if (viewers.isEmpty()) return;
-
         refreshAll();
         resync(false);
     }
@@ -79,10 +78,11 @@ public final class GuiService {
      */
     public void resync(boolean force) {
         if (resyncing) return;
-        if (!force && System.currentTimeMillis() - plugin.state().lastSyncMs() < RESYNC_AFTER_MS) return;
+        long staleAfter = viewers.isEmpty() ? IDLE_RESYNC_AFTER_MS : RESYNC_AFTER_MS;
+        if (!force && System.currentTimeMillis() - plugin.state().lastSyncMs() < staleAfter) return;
 
         resyncing = true;
-        plugin.db().async(() -> plugin.db().loadActiveRound()).whenComplete((fresh, err) -> {
+        plugin.db().async(this::authoritativeRound).whenComplete((fresh, err) -> {
             resyncing = false;
 
             if (err != null) {
@@ -90,18 +90,18 @@ public final class GuiService {
                 return;
             }
 
-            if (fresh != null) {
-                plugin.state().apply(fresh);
-            } else {
-                RoundView cached = plugin.state().current();
-                if (cached != null && cached.active()) {
-                    plugin.state().apply(new RoundView(cached.id(), cached.entryId(), cached.roundNo(), cached.roundTotal(),
-                            cached.startBid(), cached.highBid(), cached.highBidder(), cached.highBidderName(),
-                            cached.bidCount(), cached.endsAt(), false));
-                }
-            }
-
+            // Only ever apply what the database returned; MarketState discards it if it is older than what we hold.
+            if (fresh != null) plugin.state().apply(fresh);
             plugin.state().touch();
         });
+    }
+
+    /** The live round, or, when none is live, the database's current row for the round we have cached. */
+    private RoundView authoritativeRound() throws java.sql.SQLException {
+        RoundView active = plugin.db().loadActiveRound();
+        if (active != null) return active;
+
+        RoundView cached = plugin.state().current();
+        return cached != null && cached.active() ? plugin.db().loadRound(cached.id()) : null;
     }
 }

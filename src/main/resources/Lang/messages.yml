@@ -16,6 +16,7 @@ menu:
 
 general:
   reloaded: "<prefix> <green>Reloaded config, lang, menus and the item pool."
+  reload-failed: "<prefix> <red>Reload failed, previous configuration kept: <error>"
   player-only: "<prefix> <red>Only players can use this."
   not-participating: "<prefix> <red>The black market is not available on this server."
 
@@ -69,6 +70,10 @@ history:
   header: "<prefix> <gray>Recent winners:"
   line: "<dark_gray>• <item> <dark_gray>→ <white><player> <gray>for <amount> <dark_gray>(<ago> ago)"
   empty: "<prefix> <gray>Nothing has been sold yet."
+
+discord:
+  event-start: "The Black Market opens in <time> with <rounds> secret items!"
+  round-won: "<player> won <item> for <amount> at the Black Market."
 
 admin:
   start-sent: "<prefix> <green>Start requested. The leader shard will announce it shortly."

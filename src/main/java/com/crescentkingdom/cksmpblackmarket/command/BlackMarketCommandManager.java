@@ -147,7 +147,7 @@ public final class BlackMarketCommandManager implements CommandManagers {
             plugin.config().lang().send(sender, "general.reloaded");
         } catch (Exception err) {
             plugin.getLogger().log(Level.SEVERE, "Reload failed; keeping the previous configuration", err);
-            sender.sendMessage("Reload failed, previous configuration kept: " + err.getMessage());
+            plugin.config().lang().send(sender, "general.reload-failed", Placeholder.unparsed("error", String.valueOf(err.getMessage())));
         }
     }
 }

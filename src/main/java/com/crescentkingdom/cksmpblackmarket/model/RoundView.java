@@ -19,6 +19,14 @@ public record RoundView(
         boolean active
 ) {
 
+    public RoundView withEndsAt(long newEndsAt) {
+        return new RoundView(id, entryId, roundNo, roundTotal, startBid, highBid, highBidder, highBidderName, bidCount, newEndsAt, active);
+    }
+
+    public RoundView closed() {
+        return new RoundView(id, entryId, roundNo, roundTotal, startBid, highBid, highBidder, highBidderName, bidCount, endsAt, false);
+    }
+
     public boolean isActiveAt(long nowMs) {
         return active && endsAt > nowMs;
     }

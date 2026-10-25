@@ -24,7 +24,7 @@ public record Config(Settings settings, Lang lang, Pool pool, MenuLayout bidding
         FileConfiguration config = yaml(plugin, "config.yml", true);
         FileConfiguration items = yaml(plugin, "items.yml", false);
         FileConfiguration lang = yaml(plugin, "Lang/messages.yml", true);
-        FileConfiguration menu = yaml(plugin, "Menus/bidding.yml", true);
+        FileConfiguration menu = yaml(plugin, "Menus/bidding.yml", false);
 
         return new Config(
                 Settings.parse(config, plugin.getLogger()),
@@ -36,7 +36,7 @@ public record Config(Settings settings, Lang lang, Pool pool, MenuLayout bidding
 
     /**
      * Loads the on-disk file. With {@code mergeDefaults} the bundled copy backs it, so keys added in a
-     * newer build never go missing (not used for items.yml: deleted sample prizes must stay deleted).
+     * newer build never go missing (not used for items.yml or the menu: entries an admin deleted must stay deleted).
      */
     private static FileConfiguration yaml(CKSMPBlackMarket plugin, String path, boolean mergeDefaults) {
         File file = new File(plugin.getDataFolder(), path);

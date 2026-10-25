@@ -5,7 +5,7 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import org.bukkit.Bukkit;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.ArrayList;
@@ -76,12 +76,9 @@ public final class Lang {
         for (Component line : components(key, resolvers)) audience.sendMessage(line);
     }
 
-    public void broadcast(String key, TagResolver... resolvers) {
-        Bukkit.getServer().sendMessage(component(key, resolvers));
-    }
-
-    public void broadcastLines(String key, TagResolver... resolvers) {
-        sendLines(Bukkit.getServer(), key, resolvers);
+    /** Plain text (no colours) for Discord and logs. */
+    public String plain(String key, TagResolver... resolvers) {
+        return PlainTextComponentSerializer.plainText().serialize(component(key, resolvers));
     }
 
     private TagResolver resolver(TagResolver[] resolvers) {

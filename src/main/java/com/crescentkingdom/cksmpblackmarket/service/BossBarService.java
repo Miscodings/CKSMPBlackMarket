@@ -43,14 +43,14 @@ public final class BossBarService {
         bar.overlay(s.bossBarOverlay());
 
         if (!shown) {
-            Bukkit.getServer().showBossBar(bar);
+            plugin.audiences().announcements().showBossBar(bar);
             shown = true;
         }
     }
 
     /** Players who connect mid-round still get the bar. Safe from any thread. */
     public void onJoin(Player player) {
-        if (shown) player.showBossBar(bar);
+        if (shown && plugin.audiences().wants(player)) player.showBossBar(bar);
     }
 
     public void hide() {

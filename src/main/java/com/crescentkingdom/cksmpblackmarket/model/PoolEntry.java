@@ -2,6 +2,8 @@ package com.crescentkingdom.cksmpblackmarket.model;
 
 import org.bukkit.Material;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 /** One auctionable prize, fully parsed from items.yml. */
@@ -25,7 +27,8 @@ public record PoolEntry(
     /** Exact amount the next bid must reach; mirrored by the SQL guard in BlackMarketDb#placeBid. */
     public double nextBid(RoundView round) {
         if (round.bidCount() == 0) return startBid;
-        double raise = Math.max(minIncrement, round.highBid() * incrementPercent);
-        return Math.ceil((round.highBid() + raise) * 100.0) / 100.0;
+        BigDecimal high = BigDecimal.valueOf(round.highBid());
+        BigDecimal raise = high.multiply(BigDecimal.valueOf(incrementPercent)).max(BigDecimal.valueOf(minIncrement));
+        return high.add(raise).setScale(2, RoundingMode.CEILING).doubleValue();
     }
 }

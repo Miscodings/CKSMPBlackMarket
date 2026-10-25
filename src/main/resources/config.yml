@@ -48,6 +48,16 @@ bidding:
 history:
   size: 8
 
+announcements:
+  # Per-player opt-out, stored in CKSMPCore's native player settings (settings.player.<key> in Core's config.yml
+  # plus a network-boolean item in its settings menu). Players without the key receive broadcasts.
+  setting-key: "blackmarket-announcements"
+
+discord:
+  # Post event starts and round winners to Core's Discord chat relay (sent by the leader shard only).
+  enabled: true
+  sender: "Black Market"
+
 bossbar:
   enabled: true
   color: PURPLE

@@ -136,8 +136,8 @@ public final class SyncService {
 
         onGlobal(() -> {
             Config cfg = plugin.config();
-            cfg.lang().broadcastLines("round.start", RoundText.resolver(plugin, cfg, round, System.currentTimeMillis()));
-            cfg.play(Bukkit.getServer(), "round-start");
+            cfg.lang().sendLines(plugin.audiences().announcements(), "round.start", RoundText.resolver(plugin, cfg, round, System.currentTimeMillis()));
+            cfg.play(plugin.audiences().announcements(), "round-start");
             plugin.bossBar().update();
         });
     }
@@ -157,12 +157,13 @@ public final class SyncService {
                     Placeholder.component("amount", Text.money(cfg.lang(), round.highBid())),
                     Placeholder.unparsed("player", String.valueOf(round.highBidderName())));
 
-            if (cfg.settings().broadcastBids()) cfg.lang().broadcast("bid.broadcast", tags);
+            if (cfg.settings().broadcastBids()) cfg.lang().send(plugin.audiences().announcements(), "bid.broadcast", tags);
 
             if (previous != null) {
                 Player outbid = Bukkit.getPlayer(previous);
                 if (outbid != null) {
-                    TagResolver outbidTags = TagResolver.resolver(tags, Placeholder.component("amount", Text.money(cfg.lang(), previousBid)));
+                    // First resolver wins on a name clash, so the refund amount must come before the shared tags.
+                    TagResolver outbidTags = TagResolver.resolver(Placeholder.component("amount", Text.money(cfg.lang(), previousBid)), tags);
                     outbid.getScheduler().run(plugin, task -> {
                         cfg.lang().send(outbid, "bid.outbid", outbidTags);
                         cfg.play(outbid, "outbid");
@@ -187,11 +188,11 @@ public final class SyncService {
             plugin.bossBar().update();
 
             if (round.highBidder() == null) {
-                cfg.lang().broadcast("round.no-bids", tags);
+                cfg.lang().send(plugin.audiences().announcements(), "round.no-bids", tags);
                 return;
             }
 
-            cfg.lang().broadcast("round.won", tags);
+            cfg.lang().send(plugin.audiences().announcements(), "round.won", tags);
 
             Player winner = Bukkit.getPlayer(round.highBidder());
             if (winner != null) {
@@ -209,10 +210,10 @@ public final class SyncService {
 
         onGlobal(() -> {
             Config cfg = plugin.config();
-            cfg.lang().broadcastLines("event.announce",
+            cfg.lang().sendLines(plugin.audiences().announcements(), "event.announce",
                     Placeholder.component("time", Text.time(cfg.lang(), seconds)),
                     Placeholder.unparsed("rounds", Integer.toString(rounds)));
-            cfg.play(Bukkit.getServer(), "event-announce");
+            cfg.play(plugin.audiences().announcements(), "event-announce");
         });
     }
 
@@ -220,7 +221,7 @@ public final class SyncService {
         if (!plugin.config().settings().participate()) return;
 
         onGlobal(() -> {
-            plugin.config().lang().broadcast("event.finished");
+            plugin.config().lang().send(plugin.audiences().announcements(), "event.finished");
             plugin.bossBar().update();
         });
     }
@@ -237,7 +238,7 @@ public final class SyncService {
 
         String reason = data.get("reason").getAsString();
         onGlobal(() -> {
-            plugin.config().lang().broadcast("event.cancelled-" + reason);
+            plugin.config().lang().send(plugin.audiences().announcements(), "event.cancelled-" + reason);
             plugin.bossBar().update();
         });
     }

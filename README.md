@@ -41,6 +41,34 @@ optional.
 | Live updates | One Redis channel via CKSMPCore's `RedisManager.registerPackets`. Each change is published once and applied by every shard, publisher included. |
 | Clock skew | Round end and lease expiry are decided with the database clock, never shard clocks. |
 
+### What is reused from CKSMPCore
+
+| Core system | Used for |
+|---|---|
+| `DatabaseManager` | Shared Postgres pool for all `cksmpbm_*` tables. |
+| `RedisManager.registerPackets` / `sendPacket` | The single sync channel; also `hlen minecraft:smp:players` for the network player minimum. |
+| Vault economy (`CurrencyManager`) | Bid charges, refunds and wallet checks. |
+| `GUIManager` / `MenuInventoryHolder` | Hosts the bidding menu, so Core's click/drag/offhand protection applies. `ItemUtils.menuItem` builds the static buttons. |
+| `CommandManagers` registry + CommandAPI | `/blackmarket` registration, same pattern as the other CKSMP plugins. |
+| `ColourUtils` | MiniMessage rendering and `<center>` chat lines. |
+| `StashManager` | Overflow when a winner's inventory is full. |
+| `PlayerAPI.getProfile` / `PlayerDataLoadEvent` | Claim refunds and prizes once the wallet is loaded. |
+| `registerExternalSaveHook` | A player's save or shard transfer waits for their in-flight bid to settle. |
+| Native player settings | Per-player announcement opt-out (below). |
+| `DiscordRelay.sendSystem` | Event starts and round winners in the Discord chat channel (leader shard only). |
+
+**Announcement toggle.** Add the key to Core's `config.yml` and a `network-boolean` item to its settings menu, the
+same way as the private-message / payment toggles:
+
+```yaml
+settings:
+  player:
+    blackmarket-announcements: true
+```
+
+Players without the key (or before you add it) receive broadcasts. The key is configurable via
+`announcements.setting-key`.
+
 Hot-path notes: the config is parsed once into immutable records (no YAML reads while bidding or rendering);
 each shard keeps a single volatile round snapshot that the menu, boss bar and placeholders read lock-free; the
 menu re-renders only the slots whose text changed; the scheduler tick is a few timestamp comparisons and only
@@ -88,6 +116,9 @@ See the header of [`items.yml`](src/main/resources/items.yml). Bid maths per pri
 ```
 ./gradlew build
 ```
+
+`build` also runs the unit tests (bid maths, slot scheduling, weighted draw, cache ordering). Anything touching
+Postgres, Redis or a live server is untested.
 
 Needs `CKSMPCore` and `CKSMPItems` in your local Maven repository (`./gradlew publishToMavenLocal` in each).
 

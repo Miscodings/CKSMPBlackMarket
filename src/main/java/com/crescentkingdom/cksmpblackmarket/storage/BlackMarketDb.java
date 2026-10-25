@@ -86,6 +86,15 @@ public final class BlackMarketDb {
         }
     }
 
+    /** Frees the lease on shutdown so another shard takes over immediately instead of after the TTL. */
+    public void releaseLease(String holder) throws SQLException {
+        try (Connection c = core.getConnection();
+             PreparedStatement ps = c.prepareStatement("UPDATE cksmpbm_lease SET expires_at = 0 WHERE name = 'scheduler' AND holder = ?")) {
+            ps.setString(1, holder);
+            ps.executeUpdate();
+        }
+    }
+
     public String leaseHolder() throws SQLException {
         try (Connection c = core.getConnection();
              PreparedStatement ps = c.prepareStatement("SELECT holder FROM cksmpbm_lease WHERE name = 'scheduler' AND expires_at >= " + NOW);

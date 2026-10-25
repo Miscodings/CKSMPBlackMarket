@@ -5,6 +5,7 @@ import com.crescentkingdom.cksmpblackmarket.config.Config;
 import com.crescentkingdom.cksmpblackmarket.gui.GuiService;
 import com.crescentkingdom.cksmpblackmarket.hook.BlackMarketExpansion;
 import com.crescentkingdom.cksmpblackmarket.listener.PlayerListener;
+import com.crescentkingdom.cksmpblackmarket.service.Audiences;
 import com.crescentkingdom.cksmpblackmarket.service.BidService;
 import com.crescentkingdom.cksmpblackmarket.service.BossBarService;
 import com.crescentkingdom.cksmpblackmarket.service.EventScheduler;
@@ -38,6 +39,7 @@ public final class CKSMPBlackMarket extends JavaPlugin {
     private PayoutService payouts;
     private BidService bids;
     private SyncService sync;
+    private Audiences audiences;
     private BossBarService bossBar;
     private GuiService gui;
     private EventScheduler scheduler;
@@ -83,12 +85,16 @@ public final class CKSMPBlackMarket extends JavaPlugin {
         rewards = new RewardService(this);
         payouts = new PayoutService(this);
         bids = new BidService(this);
+        audiences = new Audiences(this);
         sync = new SyncService(this);
         bossBar = new BossBarService(this);
         gui = new GuiService(this);
         scheduler = new EventScheduler(this, core.getServerManager().getServerData().getServerID());
 
         sync.register();
+
+        // A player's save, and any cross-shard transfer gated on it, waits for a pending bid to settle.
+        core.registerExternalSaveHook(player -> bids.awaitInFlight(player.getUniqueId()));
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
 
         var commandManager = new BlackMarketCommandManager(this);
@@ -158,6 +164,10 @@ public final class CKSMPBlackMarket extends JavaPlugin {
 
     public BidService bids() {
         return bids;
+    }
+
+    public Audiences audiences() {
+        return audiences;
     }
 
     public SyncService sync() {

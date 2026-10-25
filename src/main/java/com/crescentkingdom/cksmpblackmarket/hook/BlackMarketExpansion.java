@@ -52,7 +52,10 @@ public final class BlackMarketExpansion extends PlaceholderExpansion {
 
         return switch (params) {
             case "status" -> live ? "active" : "idle";
-            case "next_event" -> Long.toString(Math.max(-1, cfg.settings().firstSlotAfter(now) < 0 ? -1 : (cfg.settings().firstSlotAfter(now) - now) / 1000));
+            case "next_event" -> {
+                long next = cfg.settings().firstSlotAfter(now);
+                yield Long.toString(next < 0 ? -1 : (next - now) / 1000);
+            }
             case "item" -> {
                 if (!live) yield "";
                 PoolEntry entry = cfg.pool().get(round.entryId());

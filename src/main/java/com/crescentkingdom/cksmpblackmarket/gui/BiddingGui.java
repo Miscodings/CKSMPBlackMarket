@@ -9,6 +9,7 @@ import com.crescentkingdom.cksmpblackmarket.model.RoundView;
 import com.crescentkingdom.cksmpblackmarket.service.RoundText;
 import com.crescentkingdom.cksmpblackmarket.util.Text;
 import com.crescentkingdom.cksmpcore.Managers.GUI.MenuInventoryHolder;
+import com.crescentkingdom.cksmpcore.Utils.ItemUtils;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.datacomponent.item.TooltipDisplay;
@@ -43,6 +44,7 @@ public final class BiddingGui implements MenuInventoryHolder {
     private final MenuLayout layout;
     private final Inventory inventory;
     private final String[] functionBySlot;
+    private final ItemUtils itemUtils = new ItemUtils();
 
     private long renderedRound = Long.MIN_VALUE;
     private long renderedKey = Long.MIN_VALUE;
@@ -55,7 +57,7 @@ public final class BiddingGui implements MenuInventoryHolder {
         this.inventory = Bukkit.createInventory(this, layout.size(), cfg.lang().format(layout.title()));
 
         if (layout.fill() != null) {
-            ItemStack filler = item(layout.fill().material(), layout.fill().itemModel(), cfg.lang().format(layout.fill().name() == null ? " " : layout.fill().name()), List.of());
+            ItemStack filler = staticItem(cfg, layout.fill());
             for (int slot = 0; slot < layout.size(); slot++) inventory.setItem(slot, filler);
         }
 
@@ -70,7 +72,8 @@ public final class BiddingGui implements MenuInventoryHolder {
         boolean live = round != null && round.isActiveAt(now);
 
         // One long that changes whenever any visible text would: round, bids, whole seconds left, live flag.
-        long key = live ? round.id() * 1_000_003L + round.bidCount() * 10_007L + Text.secondsUntil(round.endsAt(), now) : -1;
+        // Idle keys on the wall-clock second so the "next event" countdown keeps ticking.
+        long key = live ? round.id() * 1_000_003L + round.bidCount() * 10_007L + Text.secondsUntil(round.endsAt(), now) : -(now / 1000) - 1;
         if (key == renderedKey) return;
         renderedKey = key;
 
@@ -87,7 +90,7 @@ public final class BiddingGui implements MenuInventoryHolder {
 
         TagResolver tags = TagResolver.resolver(
                 RoundText.resolver(plugin, cfg, round, now),
-                Placeholder.component("balance", Text.money(cfg.lang(), plugin.economy().getBalance(player))));
+                RoundText.lazy("balance", () -> Text.money(cfg.lang(), plugin.economy().getBalance(player))));
 
         for (Button button : layout.buttons()) {
             switch (button.function()) {
@@ -96,7 +99,7 @@ public final class BiddingGui implements MenuInventoryHolder {
                 }
                 case "info", "bid" -> inventory.setItem(button.slot(), render(cfg, button, tags));
                 default -> {
-                    if (renderedRound == Long.MIN_VALUE) inventory.setItem(button.slot(), render(cfg, button, tags));
+                    if (renderedRound == Long.MIN_VALUE) inventory.setItem(button.slot(), staticItem(cfg, button));
                 }
             }
         }
@@ -116,9 +119,17 @@ public final class BiddingGui implements MenuInventoryHolder {
                 case "reward" -> inventory.setItem(button.slot(), item(Material.BARRIER, null,
                         cfg.lang().component("menu.idle-name"), cfg.lang().components("menu.idle-lore", tags)));
                 case "info", "bid" -> inventory.setItem(button.slot(), item(Material.GRAY_STAINED_GLASS_PANE, null, Component.text(" "), List.of()));
-                default -> inventory.setItem(button.slot(), render(cfg, button, tags));
+                default -> inventory.setItem(button.slot(), staticItem(cfg, button));
             }
         }
+    }
+
+    /** Placeholder-free buttons (filler, close) go through CKSMPCore's own menu item builder. */
+    private ItemStack staticItem(Config cfg, Button button) {
+        Component name = button.name() == null ? Component.empty() : cfg.lang().format(button.name());
+        ItemStack item = itemUtils.menuItem(plugin.core().getPluginInstance(), button.material(), 1, name, button.lore(), false);
+        if (button.itemModel() != null) item.setData(DataComponentTypes.ITEM_MODEL, Key.key(button.itemModel()));
+        return item;
     }
 
     private ItemStack render(Config cfg, Button button, TagResolver tags) {
