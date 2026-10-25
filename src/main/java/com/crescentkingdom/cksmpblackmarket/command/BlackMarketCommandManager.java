@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 
 /**
- * /blackmarket (aliases /bm, /darkauction). Registered through CKSMPCore's command manager registry like
+ * /blackmarket (alias /bm). Registered through CKSMPCore's command manager registry like
  * the other CKSMP plugins. Every node has its own permission.
  */
 public final class BlackMarketCommandManager implements CommandManagers {
@@ -51,7 +51,7 @@ public final class BlackMarketCommandManager implements CommandManagers {
 
     private void register() {
         CommandAPICommand root = new CommandAPICommand(name())
-                .withAliases("bm", "da", "darkauction", "darkauctions")
+                .withAliases("bm")
                 .withPermission("cksmpblackmarket.commands.open")
                 .executesPlayer((player, args) -> {
                     plugin.gui().open(player);

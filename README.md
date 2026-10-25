@@ -19,7 +19,7 @@ code was taken from the open-source dark-auction plugins it was compared against
   bidding opens, a short bid window with anti-snipe extension, per-bid broadcasts, the same wording and colour
   palette, a 6-row menu whose bid button changes material with the amount (iron, gold, diamond, emerald,
   netherite) and shows your own head while you lead. Defaults mirror AxDarkAuctions' timings.
-- Commands answer to the same aliases: `/blackmarket`, `/bm`, `/da`, `/darkauction`, `/darkauctions`.
+- Commands: `/blackmarket` and the `/bm` alias.
 - Weighted prize pool (`items.yml`): CKSMPItems ids, vanilla materials and/or console commands.
 - Bids are charged through Vault (CKSMPCore's economy); outbid players are refunded automatically.
 - Winners get the prize wherever they are; offline winners receive it on next login. Full inventories overflow
@@ -80,7 +80,7 @@ touches the database on a state change or lease renewal.
 
 ## Installation
 
-**Remove AxDarkAuctions first.** Both plugins register `/bm`, `/da` and `/darkauction`, so running them side by
+**Remove AxDarkAuctions first.** Both plugins register `/bm` (and `/blackmarket`), so running them side by
 side makes the commands ambiguous.
 
 1. Build with `./gradlew build` and drop `build/libs/CKSMPBlackMarket-1.0.0.jar` into `plugins/` on every shard.
@@ -93,7 +93,7 @@ side makes the commands ambiguous.
 
 | Command | Permission | Default |
 |---|---|---|
-| `/blackmarket` (`/bm`, `/darkauction`) opens the menu | `cksmpblackmarket.commands.open` | everyone |
+| `/blackmarket` (`/bm`) opens the menu | `cksmpblackmarket.commands.open` | everyone |
 | `/blackmarket status` | `cksmpblackmarket.commands.status` | everyone |
 | `/blackmarket history` | `cksmpblackmarket.commands.history` | everyone |
 | `/blackmarket start` | `cksmpblackmarket.commands.admin.start` | op |
