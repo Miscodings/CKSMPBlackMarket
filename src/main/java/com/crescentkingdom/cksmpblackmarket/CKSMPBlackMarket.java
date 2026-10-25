@@ -2,6 +2,10 @@ package com.crescentkingdom.cksmpblackmarket;
 
 import com.crescentkingdom.cksmpblackmarket.command.BlackMarketCommandManager;
 import com.crescentkingdom.cksmpblackmarket.config.Config;
+import com.crescentkingdom.cksmpblackmarket.config.Pool;
+import com.crescentkingdom.cksmpblackmarket.gui.editor.EditorListener;
+import com.crescentkingdom.cksmpblackmarket.gui.editor.EditorService;
+import com.crescentkingdom.cksmpblackmarket.service.PrizeService;
 import com.crescentkingdom.cksmpblackmarket.gui.GuiService;
 import com.crescentkingdom.cksmpblackmarket.hook.BlackMarketExpansion;
 import com.crescentkingdom.cksmpblackmarket.listener.PlayerListener;
@@ -21,6 +25,7 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.concurrent.ExecutorService;
+import java.util.function.UnaryOperator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,6 +44,8 @@ public final class CKSMPBlackMarket extends JavaPlugin {
     private PayoutService payouts;
     private BidService bids;
     private SyncService sync;
+    private PrizeService prizes;
+    private EditorService editor;
     private Audiences audiences;
     private BossBarService bossBar;
     private GuiService gui;
@@ -47,7 +54,7 @@ public final class CKSMPBlackMarket extends JavaPlugin {
     @Override
     public void onEnable() {
         try {
-            config = Config.load(this);
+            config = Config.load(this, Pool.empty());
         } catch (Exception err) {
             getLogger().severe("Invalid configuration, disabling: " + err.getMessage());
             getServer().getPluginManager().disablePlugin(this);
@@ -83,6 +90,7 @@ public final class CKSMPBlackMarket extends JavaPlugin {
 
         state = new MarketState();
         rewards = new RewardService(this);
+        prizes = new PrizeService(this);
         payouts = new PayoutService(this);
         bids = new BidService(this);
         audiences = new Audiences(this);
@@ -90,6 +98,18 @@ public final class CKSMPBlackMarket extends JavaPlugin {
         bossBar = new BossBarService(this);
         gui = new GuiService(this);
         scheduler = new EventScheduler(this, core.getServerManager().getServerData().getServerID());
+
+        try {
+            prizes.seedFromYamlIfEmpty();
+            prizes.loadNow();
+        } catch (Exception err) {
+            getLogger().severe("Could not load the prize pool, disabling: " + err.getMessage());
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
+        editor = new EditorService(this);
+        getServer().getPluginManager().registerEvents(new EditorListener(this), this);
 
         sync.register();
 
@@ -130,8 +150,13 @@ public final class CKSMPBlackMarket extends JavaPlugin {
 
     /** Re-reads config, lang, menus and the pool. A failed parse leaves the previous config running. */
     public void reload() {
-        config = Config.load(this);
+        swapConfig(current -> Config.load(this, current.pool()));
         rewards.invalidate();
+    }
+
+    /** Atomically replaces the config; reload and prize edits can race, and neither may clobber the other. */
+    public synchronized void swapConfig(UnaryOperator<Config> change) {
+        config = change.apply(config);
     }
 
     public Config config() {
@@ -164,6 +189,14 @@ public final class CKSMPBlackMarket extends JavaPlugin {
 
     public BidService bids() {
         return bids;
+    }
+
+    public PrizeService prizes() {
+        return prizes;
+    }
+
+    public EditorService editor() {
+        return editor;
     }
 
     public Audiences audiences() {

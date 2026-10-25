@@ -96,10 +96,26 @@ touches the database on a state change or lease renewal.
 
 `start`, `stop` and `skip` can be run from any shard; the request is relayed to whichever shard holds the lease.
 
-## Configuring prizes
+## Managing prizes in-game
 
-See the header of [`items.yml`](src/main/resources/items.yml). Bid maths per prize: the first bid is
-`start-bid`, then `current + max(min-increment, current * increment-percent)`.
+`/blackmarket editor` (`cksmpblackmarket.commands.admin.editor`) opens the prize pool as a chest. No typing, no
+dialogs.
+
+- **Add a prize:** drop any item onto an empty slot or the hopper, or shift-click one from your inventory. The
+  item is saved as an exact copy of the stack, so AdvancedEnchantments enchants, other custom enchants, NBT,
+  custom names and lore all work as they are. You keep your own item.
+- **Edit a prize:** left-click it. Weight, starting bid, minimum raise and raise percentage are adjusted with
+  clicks (left adds, right subtracts, shift multiplies; step sizes are in `config.yml` under `editor`).
+  Toggle it on or off, give yourself a copy to check it, or delete it (click twice).
+- **Multi-item prizes:** open "Prize items" in the prize menu and drop more items into that chest; whatever is in
+  it when you close it or click save becomes the prize.
+- **Quick toggle:** right-click a prize in the list.
+
+Prizes are stored in Postgres (`cksmpbm_prize`) and an edit reaches every shard immediately. `items.yml` is only
+a one-time seed for an empty table. Console-command prizes (for example crate keys) can be seeded from
+`items.yml` but are not editable in the chest GUI yet.
+
+Bid maths per prize: the first bid is `start-bid`, then `current + max(min-increment, current * increment-percent)`.
 
 ## Known limitations
 
@@ -109,7 +125,7 @@ See the header of [`items.yml`](src/main/resources/items.yml). Bid maths per pri
   player's shard can lose that delivery. Failures the plugin can see (player left, reward removed from config)
   are restored to the ledger.
 - Shard clocks only affect what the countdown displays; they should still be NTP-synced.
-- Config is per shard and is not synced; keep the files identical.
+- Config files are per shard and not synced; keep them identical. The prize pool is the exception: it is in the database.
 
 ## Building
 

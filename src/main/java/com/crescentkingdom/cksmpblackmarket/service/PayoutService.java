@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 /**
@@ -49,8 +50,17 @@ public final class PayoutService {
                 return;
             }
 
-            // The retired callback runs if the player left before the task could.
-            player.getScheduler().run(plugin, task -> apply(player, rows), () -> restore(uuid, rows));
+            // Exactly one of apply / restore runs, including when the scheduler refuses (returns null) for a removed player.
+            AtomicBoolean handled = new AtomicBoolean();
+            Runnable toLedger = () -> {
+                if (handled.compareAndSet(false, true)) restore(uuid, rows);
+            };
+
+            var scheduled = player.getScheduler().run(plugin, task -> {
+                if (handled.compareAndSet(false, true)) apply(player, rows);
+            }, toLedger);
+
+            if (scheduled == null) toLedger.run();
         });
     }
 

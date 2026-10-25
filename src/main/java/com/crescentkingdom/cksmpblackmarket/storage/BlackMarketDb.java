@@ -67,6 +67,7 @@ public final class BlackMarketDb {
             s.execute("CREATE INDEX IF NOT EXISTS cksmpbm_round_ended_idx ON cksmpbm_round(ended_at DESC) WHERE state = 'ENDED'");
             s.execute("CREATE TABLE IF NOT EXISTS cksmpbm_payout(id BIGSERIAL PRIMARY KEY, player_uuid VARCHAR(36) NOT NULL, kind VARCHAR(8) NOT NULL, amount DECIMAL(20,2) NOT NULL DEFAULT 0, payload TEXT, created_at BIGINT NOT NULL)");
             s.execute("CREATE INDEX IF NOT EXISTS cksmpbm_payout_player_idx ON cksmpbm_payout(player_uuid)");
+            s.execute("CREATE TABLE IF NOT EXISTS cksmpbm_prize(id VARCHAR(64) PRIMARY KEY, enabled BOOLEAN NOT NULL DEFAULT TRUE, weight INTEGER NOT NULL, start_bid DECIMAL(20,2) NOT NULL, min_increment DECIMAL(20,2) NOT NULL, increment_percent DECIMAL(8,4) NOT NULL, display_name TEXT, display_lore TEXT NOT NULL DEFAULT '[]', icon TEXT, items TEXT NOT NULL DEFAULT '[]', commands TEXT NOT NULL DEFAULT '[]', updated_at BIGINT NOT NULL)");
             s.execute("CREATE TABLE IF NOT EXISTS cksmpbm_lease(name VARCHAR(32) PRIMARY KEY, holder VARCHAR(64) NOT NULL, expires_at BIGINT NOT NULL)");
         }
     }
@@ -331,6 +332,76 @@ public final class BlackMarketDb {
                 while (rs.next()) rows.add(new HistoryRow(rs.getString(1), rs.getString(2), rs.getDouble(3), rs.getLong(4)));
                 return rows;
             }
+        }
+    }
+
+    // ---------------------------------------------------------------- prizes
+
+    private static final String PRIZE_COLS = "id, enabled, weight, start_bid, min_increment, increment_percent, display_name, display_lore, icon, items, commands";
+
+    public List<PoolEntry> loadPrizes() throws SQLException {
+        try (Connection c = core.getConnection();
+             PreparedStatement ps = c.prepareStatement("SELECT " + PRIZE_COLS + " FROM cksmpbm_prize");
+             ResultSet rs = ps.executeQuery()) {
+            List<PoolEntry> prizes = new ArrayList<>();
+
+            while (rs.next()) {
+                prizes.add(new PoolEntry(
+                        rs.getString("id"), rs.getBoolean("enabled"), rs.getInt("weight"),
+                        rs.getDouble("start_bid"), rs.getDouble("min_increment"), rs.getDouble("increment_percent"),
+                        new PoolEntry.Display(rs.getString("display_name"), PrizeCodec.decodeStrings(rs.getString("display_lore")),
+                                PrizeCodec.decodeSpecOrNull(rs.getString("icon"))),
+                        PrizeCodec.decodeItems(rs.getString("items")),
+                        PrizeCodec.decodeStrings(rs.getString("commands"))));
+            }
+
+            return prizes;
+        }
+    }
+
+    public int prizeCount() throws SQLException {
+        try (Connection c = core.getConnection();
+             PreparedStatement ps = c.prepareStatement("SELECT COUNT(*) FROM cksmpbm_prize");
+             ResultSet rs = ps.executeQuery()) {
+            return rs.next() ? rs.getInt(1) : 0;
+        }
+    }
+
+    /** Insert or overwrite (used by the editor). */
+    public void upsertPrize(PoolEntry prize) throws SQLException {
+        writePrize(prize, "ON CONFLICT (id) DO UPDATE SET enabled = EXCLUDED.enabled, weight = EXCLUDED.weight, start_bid = EXCLUDED.start_bid, "
+                + "min_increment = EXCLUDED.min_increment, increment_percent = EXCLUDED.increment_percent, display_name = EXCLUDED.display_name, "
+                + "display_lore = EXCLUDED.display_lore, icon = EXCLUDED.icon, items = EXCLUDED.items, commands = EXCLUDED.commands, updated_at = EXCLUDED.updated_at");
+    }
+
+    /** Insert only when absent (used to seed from items.yml, safe to race across shards). */
+    public void insertPrizeIfAbsent(PoolEntry prize) throws SQLException {
+        writePrize(prize, "ON CONFLICT (id) DO NOTHING");
+    }
+
+    private void writePrize(PoolEntry p, String conflict) throws SQLException {
+        String sql = "INSERT INTO cksmpbm_prize(" + PRIZE_COLS + ", updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + NOW + ") " + conflict;
+
+        try (Connection c = core.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, p.id());
+            ps.setBoolean(2, p.enabled());
+            ps.setInt(3, p.weight());
+            ps.setBigDecimal(4, BigDecimal.valueOf(p.startBid()));
+            ps.setBigDecimal(5, BigDecimal.valueOf(p.minIncrement()));
+            ps.setBigDecimal(6, BigDecimal.valueOf(p.incrementPercent()));
+            ps.setString(7, p.display().name());
+            ps.setString(8, PrizeCodec.encodeStrings(p.display().lore()));
+            ps.setString(9, PrizeCodec.encodeSpecOrNull(p.display().icon()));
+            ps.setString(10, PrizeCodec.encodeItems(p.items()));
+            ps.setString(11, PrizeCodec.encodeStrings(p.commands()));
+            ps.executeUpdate();
+        }
+    }
+
+    public void deletePrize(String id) throws SQLException {
+        try (Connection c = core.getConnection(); PreparedStatement ps = c.prepareStatement("DELETE FROM cksmpbm_prize WHERE id = ?")) {
+            ps.setString(1, id);
+            ps.executeUpdate();
         }
     }
 

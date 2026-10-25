@@ -32,7 +32,7 @@ class LogicTest {
     }
 
     private static PoolEntry entry(double start, double minInc, double pct) {
-        return new PoolEntry("x", 1, start, minInc, pct, new PoolEntry.Display(null, List.of(), null), List.of(), List.of("say hi"));
+        return new PoolEntry("x", true, 1, start, minInc, pct, PoolEntry.Display.none(), List.of(), List.of("say hi"));
     }
 
     @Test
@@ -99,7 +99,7 @@ class LogicTest {
             yaml.set("pool." + id + ".start-bid", 10);
             yaml.set("pool." + id + ".reward.commands", List.of("say " + id));
         }
-        Pool pool = Pool.parse(yaml, LOG);
+        Pool pool = Pool.of(Pool.parseYaml(yaml, LOG));
         assertNotNull(pool.get("a"));
 
         Random random = new Random(7);

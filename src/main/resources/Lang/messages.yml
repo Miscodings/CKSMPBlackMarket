@@ -75,6 +75,107 @@ discord:
   event-start: "The Black Market opens in <time> with <rounds> secret items!"
   round-won: "<player> won <item> for <amount> at the Black Market."
 
+editor:
+  list:
+    title: "<#c77dff>Black Market Prize Pool"
+    prev: "<yellow>Previous page"
+    next: "<yellow>Next page"
+    close: "<red>Close"
+    page: "<gray>Page <white><page><gray>/<white><pages> <dark_gray>• <white><count> <gray>prizes"
+    help-name: "<#c77dff>How this works"
+    help-lore:
+      - ""
+      - "<gray>Drop an item on an empty slot, or shift-click one"
+      - "<gray>from your inventory, to add it as a prize."
+      - "<gray>It is saved <white>exactly<gray> as it is, custom"
+      - "<gray>enchants and all."
+      - ""
+      - "<gray>Left-click a prize to edit it,"
+      - "<gray>right-click to switch it on or off."
+    add-name: "<green>Add a prize"
+    add-lore:
+      - ""
+      - "<gray>Drop an item here, or shift-click"
+      - "<gray>one from your inventory."
+    prize-lore:
+      - ""
+      - "<dark_gray>Weight: <white><weight>"
+      - "<dark_gray>Start bid: <start-bid>"
+      - "<dark_gray>Status: <status>"
+      - ""
+      - "<yellow>Left-click <gray>edit"
+      - "<yellow>Right-click <gray>toggle on/off"
+    status-on: "<green>enabled"
+    status-off: "<red>disabled"
+  detail:
+    title: "<#c77dff>Edit Prize"
+    back: "<yellow>Back to the pool"
+    adjust-hint:
+      - ""
+      - "<yellow>Left-click <gray>+<step>"
+      - "<yellow>Right-click <gray>-<step>"
+      - "<yellow>Shift <gray>x<multiplier>"
+    weight-name: "<#c77dff>Weight <dark_gray>(<white><value><dark_gray>)"
+    weight-lore:
+      - "<gray>Higher means drawn more often."
+    start-name: "<#c77dff>Starting bid <dark_gray>(<value><dark_gray>)"
+    start-lore:
+      - "<gray>The first bid must be at least this."
+    increment-name: "<#c77dff>Minimum raise <dark_gray>(<value><dark_gray>)"
+    increment-lore:
+      - "<gray>Each bid must beat the last by at"
+      - "<gray>least this or the percentage below."
+    percent-name: "<#c77dff>Raise percentage <dark_gray>(<white><value>%<dark_gray>)"
+    percent-lore:
+      - "<gray>The larger of the minimum raise and"
+      - "<gray>this share of the current bid applies."
+    enabled-name: "<#c77dff>Status: <status>"
+    enabled-lore:
+      - ""
+      - "<gray>Disabled prizes are never drawn."
+      - ""
+      - "<yellow>Click <gray>to toggle"
+    rewards-name: "<#c77dff>Prize items"
+    rewards-lore:
+      - ""
+      - "<gray>Items given to the winner: <white><count>"
+      - ""
+      - "<yellow>Click <gray>to drop items in or take them out"
+    commands-name: "<#c77dff>Console commands"
+    commands-lore:
+      - ""
+      - "<gray>Commands run on win: <white><count>"
+      - "<dark_gray>Edit these in the database or items.yml seed."
+    give-name: "<green>Give me a copy"
+    give-lore:
+      - ""
+      - "<gray>Check that the prize looks right."
+    delete-name: "<red>Delete this prize"
+    delete-lore:
+      - ""
+      - "<yellow>Click twice <gray>within 5 seconds"
+    delete-confirm-name: "<red><bold>Click again to delete"
+  rewards:
+    title: "<#c77dff>Prize Items"
+    save-name: "<green>Save and go back"
+    info-name: "<#c77dff>Prize items"
+    info-lore:
+      - ""
+      - "<gray>Everything in the top 5 rows is given"
+      - "<gray>to the winner, exactly as it is here."
+      - "<gray>Drop items in, take them out, then save."
+    filler: " "
+  msg:
+    added: "<prefix> <green>Added <item><green> to the pool as <white><id><green>. Set its bids in the editor."
+    deleted: "<prefix> <gray>Deleted <white><id><gray>."
+    delete-armed: "<prefix> <yellow>Click delete again within 5 seconds to remove <white><id><yellow>."
+    rewards-saved: "<prefix> <green>Saved <white><count><green> prize item(s)."
+    rewards-empty: "<prefix> <red>No items and no commands, so <white><id><red> was switched off."
+    too-many: "<prefix> <red>Only the first <max> stacks fit; the rest were not saved."
+    given: "<prefix> <green>Gave you a copy of <white><id><green>."
+    not-an-item: "<prefix> <red>That is not an item."
+    gone: "<prefix> <red>That prize no longer exists."
+
 admin:
   start-sent: "<prefix> <green>Start requested. The leader shard will announce it shortly."
   stop-sent: "<prefix> <green>Stop requested."

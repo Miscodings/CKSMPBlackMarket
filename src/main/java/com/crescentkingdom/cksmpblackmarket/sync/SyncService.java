@@ -30,6 +30,7 @@ public final class SyncService {
     private static final String EVENT_END = "event_end";
     private static final String CANCEL = "cancel";
     private static final String CONTROL = "control";
+    private static final String PRIZES = "prizes";
 
     private final CKSMPBlackMarket plugin;
 
@@ -94,6 +95,11 @@ public final class SyncService {
         publish(json);
     }
 
+    /** Tells every shard to re-read the prize table after an editor change. */
+    public void publishPrizesChanged() {
+        publish(message(PRIZES));
+    }
+
     private static JsonObject message(String type) {
         JsonObject json = new JsonObject();
         json.addProperty("type", type);
@@ -118,6 +124,7 @@ public final class SyncService {
                 case EVENT_END -> onEventEnd();
                 case CANCEL -> onCancel(data);
                 case CONTROL -> plugin.scheduler().enqueue(data.get("action").getAsString());
+                case PRIZES -> plugin.prizes().reloadAsync();
                 default -> plugin.getLogger().warning("Unknown sync message type: " + type);
             }
 

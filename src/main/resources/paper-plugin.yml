@@ -33,6 +33,7 @@ permissions:
       cksmpblackmarket.commands.admin.stop: true
       cksmpblackmarket.commands.admin.skip: true
       cksmpblackmarket.commands.admin.reload: true
+      cksmpblackmarket.commands.admin.editor: true
   cksmpblackmarket.commands.open:
     description: Open the black market bidding menu
     default: true
@@ -52,5 +53,8 @@ permissions:
     description: End the current round immediately
     default: op
   cksmpblackmarket.commands.admin.reload:
-    description: Reload config, lang, menus and the item pool
+    description: Reload config, lang and menus
+    default: op
+  cksmpblackmarket.commands.admin.editor:
+    description: Edit the prize pool in-game
     default: op

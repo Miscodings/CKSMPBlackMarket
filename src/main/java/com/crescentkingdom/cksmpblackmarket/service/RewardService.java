@@ -4,6 +4,7 @@ import com.crescentkingdom.cksmpblackmarket.CKSMPBlackMarket;
 import com.crescentkingdom.cksmpblackmarket.config.Config;
 import com.crescentkingdom.cksmpblackmarket.model.PoolEntry;
 import com.crescentkingdom.cksmpblackmarket.model.PoolEntry.ItemSpec;
+import com.crescentkingdom.cksmpblackmarket.storage.PrizeCodec;
 import com.crescentkingdom.cksmpcore.Managers.PlayerData.Data.PlayerData;
 import com.crescentkingdom.cksmpcore.Managers.PlayerData.Stash.StashManager;
 import com.crescentkingdom.cksmpitems.API.CKSMPItemsAPI;
@@ -24,6 +25,7 @@ public final class RewardService {
 
     private final CKSMPBlackMarket plugin;
     private final Map<String, Component> names = new ConcurrentHashMap<>();
+    private final Map<String, ItemStack> icons = new ConcurrentHashMap<>();
     private StashManager stashManager;
 
     public RewardService(CKSMPBlackMarket plugin) {
@@ -33,6 +35,7 @@ public final class RewardService {
     /** Drops cached names; call on reload and when CKSMPItems finishes loading its catalogue. */
     public void invalidate() {
         names.clear();
+        icons.clear();
     }
 
     /** Display name of the prize as a component, cached per entry. */
@@ -49,10 +52,13 @@ public final class RewardService {
 
     /** Fresh icon stack for the menu (display icon, else the first reward item, else a barrier). */
     public ItemStack icon(PoolEntry entry) {
-        ItemSpec spec = entry.display().icon() != null ? entry.display().icon() : entry.items().isEmpty() ? null : entry.items().getFirst();
-        ItemStack icon = spec == null ? ItemStack.of(Material.BARRIER) : build(spec);
-        icon.setAmount(1);
-        return icon;
+        // Decoding a serialized stack is the expensive part; menus ask for icons every refresh.
+        return icons.computeIfAbsent(entry.id(), id -> {
+            ItemSpec spec = entry.display().icon() != null ? entry.display().icon() : entry.items().isEmpty() ? null : entry.items().getFirst();
+            ItemStack icon = spec == null ? ItemStack.of(Material.BARRIER) : build(spec);
+            icon.setAmount(1);
+            return icon;
+        }).clone();
     }
 
     /** Fresh reward stacks, split to legal stack sizes. */
@@ -61,6 +67,13 @@ public final class RewardService {
 
         for (ItemSpec spec : entry.items()) {
             ItemStack stack = build(spec);
+
+            // A serialized stack already carries its own amount; never re-split what the admin set up.
+            if (spec.stack() != null) {
+                out.add(stack);
+                continue;
+            }
+
             int max = Math.max(1, stack.getMaxStackSize());
             int remaining = spec.amount();
 
@@ -110,6 +123,7 @@ public final class RewardService {
     }
 
     private ItemStack build(ItemSpec spec) {
+        if (spec.stack() != null) return PrizeCodec.decodeStack(spec.stack());
         if (spec.material() != null) return ItemStack.of(spec.material(), spec.amount());
 
         ItemStack item = CKSMPItemsAPI.getInstance().getItemManager().getItem(spec.cksmpItem());

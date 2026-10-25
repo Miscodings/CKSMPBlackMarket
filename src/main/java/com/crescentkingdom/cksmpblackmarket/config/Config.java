@@ -20,25 +20,29 @@ public record Config(Settings settings, Lang lang, Pool pool, MenuLayout bidding
         if (sound != null) audience.playSound(sound, Sound.Emitter.self());
     }
 
-    public static Config load(CKSMPBlackMarket plugin) {
+    /** Prizes live in Postgres (see PrizeService), so a file reload carries the current pool over unchanged. */
+    public static Config load(CKSMPBlackMarket plugin, Pool pool) {
         FileConfiguration config = yaml(plugin, "config.yml", true);
-        FileConfiguration items = yaml(plugin, "items.yml", false);
         FileConfiguration lang = yaml(plugin, "Lang/messages.yml", true);
         FileConfiguration menu = yaml(plugin, "Menus/bidding.yml", false);
 
         return new Config(
                 Settings.parse(config, plugin.getLogger()),
                 Lang.parse(lang),
-                Pool.parse(items, plugin.getLogger()),
+                pool,
                 MenuLayout.parse(menu, plugin.getLogger())
         );
+    }
+
+    public Config withPool(Pool newPool) {
+        return new Config(settings, lang, newPool, bidding);
     }
 
     /**
      * Loads the on-disk file. With {@code mergeDefaults} the bundled copy backs it, so keys added in a
      * newer build never go missing (not used for items.yml or the menu: entries an admin deleted must stay deleted).
      */
-    private static FileConfiguration yaml(CKSMPBlackMarket plugin, String path, boolean mergeDefaults) {
+    public static FileConfiguration yaml(CKSMPBlackMarket plugin, String path, boolean mergeDefaults) {
         File file = new File(plugin.getDataFolder(), path);
         if (!file.exists()) plugin.saveResource(path, false);
 

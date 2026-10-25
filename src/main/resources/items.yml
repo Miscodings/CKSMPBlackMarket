@@ -1,4 +1,8 @@
-# The item pool. Each event draws `event.rounds` entries without replacement, weighted by `weight`.
+# SEED ONLY. Prizes live in the database and are managed in-game with /blackmarket editor.
+# This file is imported once, when the prize table is empty, so a fresh install has something to run.
+# After that, edits here are ignored.
+#
+# Each event draws `event.rounds` entries without replacement, weighted by `weight`.
 #
 # reward.items entries use either:
 #   cksmp-item: <CKSMPItems id>      (any item registered in CKSMPItems)

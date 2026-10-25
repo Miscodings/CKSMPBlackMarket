@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -140,7 +141,15 @@ public final class BidService {
         // Completes only after the deposit or the ledger insert has actually finished.
         CompletableFuture<Void> done = new CompletableFuture<>();
 
-        player.getScheduler().run(plugin, task -> {
+        // Exactly one path runs: the task, the retired callback, or the fallback for a null (already-removed) player.
+        AtomicBoolean handled = new AtomicBoolean();
+        Runnable toLedger = () -> {
+            if (handled.compareAndSet(false, true)) viaLedger(uuid, amount).whenComplete((ignored, err) -> done.complete(null));
+        };
+
+        var scheduled = player.getScheduler().run(plugin, task -> {
+            if (!handled.compareAndSet(false, true)) return;
+
             if (!plugin.economy().depositPlayer(player, amount).transactionSuccess()) {
                 viaLedger(uuid, amount).whenComplete((ignored, err) -> done.complete(null));
                 return;
@@ -149,7 +158,9 @@ public final class BidService {
             cfg.lang().send(player, messageKey, Placeholder.component("amount", Text.money(cfg.lang(), amount)));
             cfg.play(player, "bid-fail");
             done.complete(null);
-        }, () -> viaLedger(uuid, amount).whenComplete((ignored, err) -> done.complete(null)));
+        }, toLedger);
+
+        if (scheduled == null) toLedger.run();
 
         return done;
     }

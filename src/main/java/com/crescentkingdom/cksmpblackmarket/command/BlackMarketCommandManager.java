@@ -33,6 +33,7 @@ public final class BlackMarketCommandManager implements CommandManagers {
         commands.add(() -> control("stop", "STOP", "admin.stop-sent"));
         commands.add(() -> control("skip", "SKIP", "admin.skip-sent"));
         commands.add(this::reload);
+        commands.add(this::editor);
 
         register();
     }
@@ -130,6 +131,14 @@ public final class BlackMarketCommandManager implements CommandManagers {
                         plugin.sync().publishControl(action);
                         cfg.lang().send(sender, sentKey);
                     });
+                });
+    }
+
+    private CommandAPICommand editor() {
+        return new CommandAPICommand("editor")
+                .withPermission("cksmpblackmarket.commands.admin.editor")
+                .executesPlayer((player, args) -> {
+                    plugin.editor().openList(player, 0);
                 });
     }
 

@@ -47,7 +47,11 @@ public record Settings(
         Map<String, Sound> sounds,
         String announcementSettingKey,
         boolean discordEnabled,
-        String discordSender
+        String discordSender,
+        double editorBidStep,
+        double editorIncrementStep,
+        double editorPercentStep,
+        int editorShiftMultiplier
 ) {
 
     public Sound sound(String key) {
@@ -134,7 +138,11 @@ public record Settings(
                 parseSounds(c.getConfigurationSection("sounds"), log),
                 c.getString("announcements.setting-key", "blackmarket-announcements"),
                 c.getBoolean("discord.enabled", true),
-                c.getString("discord.sender", "Black Market")
+                c.getString("discord.sender", "Black Market"),
+                Math.max(0.01, c.getDouble("editor.bid-step", 100)),
+                Math.max(0.01, c.getDouble("editor.increment-step", 10)),
+                Math.max(0.001, c.getDouble("editor.percent-step", 0.01)),
+                Math.max(2, c.getInt("editor.shift-multiplier", 10))
         );
     }
 

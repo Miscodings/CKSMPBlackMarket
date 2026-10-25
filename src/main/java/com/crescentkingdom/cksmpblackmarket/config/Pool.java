@@ -8,32 +8,66 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.logging.Logger;
 
-/** The parsed item pool. Immutable; swapped wholesale on reload. */
+/** The prize pool as loaded from Postgres. Immutable; every edit produces a new instance that is swapped in. */
 public final class Pool {
 
-    private final Map<String, PoolEntry> entries;
+    private static final Pool EMPTY = new Pool(Map.of(), List.of());
 
-    private Pool(Map<String, PoolEntry> entries) {
-        this.entries = entries;
+    private final Map<String, PoolEntry> byId;
+    private final List<PoolEntry> sorted;
+
+    private Pool(Map<String, PoolEntry> byId, List<PoolEntry> sorted) {
+        this.byId = byId;
+        this.sorted = sorted;
     }
 
+    public static Pool empty() {
+        return EMPTY;
+    }
+
+    public static Pool of(Collection<PoolEntry> entries) {
+        Map<String, PoolEntry> map = new HashMap<>();
+        for (PoolEntry entry : entries) map.put(entry.id(), entry);
+
+        List<PoolEntry> sorted = new ArrayList<>(map.values());
+        sorted.sort(Comparator.comparing(PoolEntry::id));
+        return new Pool(Map.copyOf(map), List.copyOf(sorted));
+    }
+
+    /** Disabled prizes are still resolvable (a live round may be using one), just never drawn. */
     public PoolEntry get(String id) {
-        return entries.get(id);
+        return byId.get(id);
     }
 
-    public boolean isEmpty() {
-        return entries.isEmpty();
+    public List<PoolEntry> all() {
+        return sorted;
     }
 
-    /** Weighted draw of up to {@code count} distinct entry ids. */
+    public Pool with(PoolEntry entry) {
+        Map<String, PoolEntry> map = new HashMap<>(byId);
+        map.put(entry.id(), entry);
+        return of(map.values());
+    }
+
+    public Pool without(String id) {
+        Map<String, PoolEntry> map = new HashMap<>(byId);
+        map.remove(id);
+        return of(map.values());
+    }
+
+    /** Weighted draw of up to {@code count} distinct enabled entry ids. */
     public List<String> draw(int count, Random random) {
-        List<PoolEntry> remaining = new ArrayList<>(entries.values());
+        List<PoolEntry> remaining = new ArrayList<>();
+        for (PoolEntry entry : sorted) if (entry.enabled()) remaining.add(entry);
+
         List<String> picked = new ArrayList<>(Math.min(count, remaining.size()));
 
         while (picked.size() < count && !remaining.isEmpty()) {
@@ -53,10 +87,11 @@ public final class Pool {
         return picked;
     }
 
-    public static Pool parse(FileConfiguration config, Logger log) {
-        Map<String, PoolEntry> entries = new LinkedHashMap<>();
+    /** Parses the legacy items.yml format; used only to seed an empty database. */
+    public static List<PoolEntry> parseYaml(FileConfiguration config, Logger log) {
+        List<PoolEntry> entries = new ArrayList<>();
         ConfigurationSection root = config.getConfigurationSection("pool");
-        if (root == null) return new Pool(entries);
+        if (root == null) return entries;
 
         for (String id : root.getKeys(false)) {
             ConfigurationSection section = root.getConfigurationSection(id);
@@ -69,27 +104,27 @@ public final class Pool {
                 continue;
             }
 
-            int weight = section.getInt("weight", 1);
+            int weight = section.getInt("weight", PoolEntry.DEFAULT_WEIGHT);
             double startBid = section.getDouble("start-bid", 0);
             if (weight < 1 || startBid <= 0) {
                 log.warning("Pool entry '" + id + "' needs weight >= 1 and start-bid > 0, skipping.");
                 continue;
             }
 
-            entries.put(id, new PoolEntry(
-                    id, weight, startBid,
+            entries.add(new PoolEntry(
+                    id, true, weight, startBid,
                     Math.max(0.01, section.getDouble("min-increment", 1)),
                     Math.max(0, section.getDouble("increment-percent", 0)),
-                    parseDisplay(section.getConfigurationSection("display"), items, id, log),
+                    parseDisplay(section.getConfigurationSection("display"), id, log),
                     List.copyOf(items), List.copyOf(commands)
             ));
         }
 
-        return new Pool(Map.copyOf(entries));
+        return entries;
     }
 
-    private static Display parseDisplay(ConfigurationSection section, List<ItemSpec> items, String id, Logger log) {
-        if (section == null) return new Display(null, List.of(), null);
+    private static Display parseDisplay(ConfigurationSection section, String id, Logger log) {
+        if (section == null) return Display.none();
 
         ItemSpec icon = null;
         if (section.contains("cksmp-item") || section.contains("material")) {
@@ -120,7 +155,7 @@ public final class Pool {
     }
 
     private static ItemSpec parseItem(String cksmpItem, String materialName, int amount, String id, Logger log) {
-        if (cksmpItem != null) return new ItemSpec(cksmpItem.toLowerCase(), null, amount);
+        if (cksmpItem != null) return new ItemSpec(cksmpItem.toLowerCase(), null, amount, null);
 
         Material material = materialName == null ? null : Material.matchMaterial(materialName);
         if (material == null || !material.isItem()) {
@@ -128,6 +163,6 @@ public final class Pool {
             return null;
         }
 
-        return new ItemSpec(null, material, amount);
+        return new ItemSpec(null, material, amount, null);
     }
 }
