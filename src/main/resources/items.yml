@@ -1,0 +1,49 @@
+# The item pool. Each event draws `event.rounds` entries without replacement, weighted by `weight`.
+#
+# reward.items entries use either:
+#   cksmp-item: <CKSMPItems id>      (any item registered in CKSMPItems)
+#   material:   <VANILLA_MATERIAL>
+# reward.commands run from console; <player> is the winner's name.
+# `display` is the icon in the bidding menu; omitted fields fall back to the first reward item.
+# Bid maths: first bid = start-bid, then current + max(min-increment, current * increment-percent).
+pool:
+  enchanted_apples:
+    weight: 30
+    start-bid: 2500
+    min-increment: 250
+    increment-percent: 0.05
+    display:
+      name: "<#c77dff>Enchanted Golden Apple Stash"
+      lore:
+        - "<#9d8ab5>Eight apples that shrug off death."
+    reward:
+      items:
+        - { material: ENCHANTED_GOLDEN_APPLE, amount: 8 }
+
+  netherite_cache:
+    weight: 20
+    start-bid: 10000
+    min-increment: 1000
+    increment-percent: 0.05
+    display:
+      material: NETHERITE_INGOT
+      name: "<#c77dff>Netherite Cache"
+      lore:
+        - "<#9d8ab5>Eight ingots, no questions asked."
+    reward:
+      items:
+        - { material: NETHERITE_INGOT, amount: 8 }
+
+  crate_key_bundle:
+    weight: 10
+    start-bid: 15000
+    min-increment: 1500
+    increment-percent: 0.05
+    display:
+      material: TRIPWIRE_HOOK
+      name: "<#c77dff>Mystery Key Bundle"
+      lore:
+        - "<#9d8ab5>Three keys, delivered by console command."
+    reward:
+      commands:
+        - "crate key give <player> mystery 3"

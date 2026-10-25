@@ -1,0 +1,77 @@
+# MiniMessage everywhere. <prefix> is available in every message. Lines starting with <center> are centred in chat.
+prefix: "<#c77dff><bold>BLACK MARKET</bold> <dark_gray>»</dark_gray>"
+
+money-format: "<#86fe8a>$<amount>"
+no-leader-name: "<dark_gray>nobody yet"
+time-format:
+  minutes: "<m>m <s>s"
+  seconds: "<s>s"
+
+menu:
+  idle-name: "<gray>No round running"
+  idle-lore:
+    - ""
+    - "<dark_gray>Next event in <white><time>"
+  idle-none: "<dark_gray>nothing scheduled"
+
+general:
+  reloaded: "<prefix> <green>Reloaded config, lang, menus and the item pool."
+  player-only: "<prefix> <red>Only players can use this."
+  not-participating: "<prefix> <red>The black market is not available on this server."
+
+bid:
+  no-round: "<prefix> <red>There is no round to bid on right now."
+  already-leading: "<prefix> <yellow>You already hold the highest bid."
+  insufficient: "<prefix> <red>You need <amount><red> to place the next bid."
+  withdraw-failed: "<prefix> <red>Your payment could not be taken. Try again."
+  outraced: "<prefix> <red>Someone bid first. Your <amount><red> was returned."
+  error: "<prefix> <red>Bid failed, your <amount><red> was returned."
+  placed: "<prefix> <green>You lead with <amount><green> on <item><green>."
+  outbid: "<prefix> <red>You were outbid on <item><red> by <player><red>. <amount><red> refunded."
+  broadcast: "<prefix> <gray><player> <gray>bid <amount> <gray>on <item><gray>."
+
+payout:
+  refund: "<prefix> <green>Refunded <amount><green>."
+  reward: "<prefix> <green>Your prize arrived: <item><green>."
+  stashed: "<prefix> <yellow>Your inventory was full, so part of your prize went to your <white>/stashbox<yellow>."
+  reward-missing: "<prefix> <red>Prize '<id>' no longer exists. Contact staff."
+
+event:
+  announce:
+    - "<center><dark_gray><strikethrough>                                        "
+    - "<center><#c77dff><bold>THE BLACK MARKET OPENS IN <time>"
+    - "<center><gray><rounds> secret items. Highest bid wins. <white>/blackmarket"
+    - "<center><dark_gray><strikethrough>                                        "
+  cancelled-low-players: "<prefix> <gray>Not enough players online. The black market stays closed tonight."
+  cancelled-admin: "<prefix> <gray>The black market was shut down by staff. Bids were refunded."
+  finished: "<prefix> <gray>The black market has closed. See you next time. <dark_gray>(<white>/blackmarket history<dark_gray>)"
+
+round:
+  start:
+    - "<center><dark_gray><strikethrough>                                        "
+    - "<center><#c77dff><bold>ROUND <round>/<rounds>"
+    - "<center><item>"
+    - "<center><gray>Starting bid <start-bid> <dark_gray>• <white>/blackmarket"
+    - "<center><dark_gray><strikethrough>                                        "
+  won: "<prefix> <player> <gray>won <item> <gray>for <amount><gray> after <bids> bids."
+  no-bids: "<prefix> <gray>Nobody bid on <item><gray>. It slips back into the shadows."
+  you-won: "<prefix> <green><bold>You won <item><green><bold>!"
+
+bossbar:
+  title: "<#c77dff>Black Market <dark_gray>• <item> <dark_gray>• <gray>Top bid <amount> <dark_gray>• <white><time>"
+
+status:
+  active: "<prefix> <gray>Round <white><round>/<rounds> <gray>- <item> <gray>- top bid <amount> <gray>by <player> <gray>- <white><time> <gray>left."
+  idle-next: "<prefix> <gray>No round running. Next event in <white><time><gray>."
+  idle-none: "<prefix> <gray>No round running and nothing is scheduled."
+
+history:
+  header: "<prefix> <gray>Recent winners:"
+  line: "<dark_gray>• <item> <dark_gray>→ <white><player> <gray>for <amount> <dark_gray>(<ago> ago)"
+  empty: "<prefix> <gray>Nothing has been sold yet."
+
+admin:
+  start-sent: "<prefix> <green>Start requested. The leader shard will announce it shortly."
+  stop-sent: "<prefix> <green>Stop requested."
+  skip-sent: "<prefix> <green>Skip requested."
+  no-leader: "<prefix> <red>No shard currently holds the scheduler lease. Is any shard leader-eligible?"

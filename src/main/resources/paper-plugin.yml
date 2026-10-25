@@ -1,0 +1,56 @@
+main: com.crescentkingdom.cksmpblackmarket.CKSMPBlackMarket
+name: CKSMPBlackMarket
+version: '${version}'
+api-version: '1.21'
+description: Network-wide black market auction events for Crescent Kingdom, backed by CKSMPCore.
+authors:
+  - Miscodings
+
+dependencies:
+  server:
+    CKSMPCore:
+      required: true
+      load: BEFORE
+    CKSMPItems:
+      required: true
+      load: BEFORE
+    Vault:
+      required: true
+      load: BEFORE
+    PlaceholderAPI:
+      required: false
+      load: BEFORE
+
+permissions:
+  cksmpblackmarket.*:
+    description: All CKSMPBlackMarket permissions
+    default: op
+    children:
+      cksmpblackmarket.commands.open: true
+      cksmpblackmarket.commands.history: true
+      cksmpblackmarket.commands.status: true
+      cksmpblackmarket.commands.admin.start: true
+      cksmpblackmarket.commands.admin.stop: true
+      cksmpblackmarket.commands.admin.skip: true
+      cksmpblackmarket.commands.admin.reload: true
+  cksmpblackmarket.commands.open:
+    description: Open the black market bidding menu
+    default: true
+  cksmpblackmarket.commands.history:
+    description: View recent black market winners
+    default: true
+  cksmpblackmarket.commands.status:
+    description: View the current / next black market event
+    default: true
+  cksmpblackmarket.commands.admin.start:
+    description: Force-start a black market event
+    default: op
+  cksmpblackmarket.commands.admin.stop:
+    description: Cancel the running event (refunds the leading bid)
+    default: op
+  cksmpblackmarket.commands.admin.skip:
+    description: End the current round immediately
+    default: op
+  cksmpblackmarket.commands.admin.reload:
+    description: Reload config, lang, menus and the item pool
+    default: op

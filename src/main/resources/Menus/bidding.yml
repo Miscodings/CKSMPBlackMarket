@@ -1,0 +1,43 @@
+# Placeholders: <item> <round> <rounds> <current-bid> <next-bid> <start-bid> <leader> <bids> <time> <balance>
+menu:
+  title: "<#c77dff>Black Market"
+  size: 27
+  # Applied to every slot not claimed below. Remove the section to leave gaps.
+  fill:
+    material: BLACK_STAINED_GLASS_PANE
+    name: " "
+  items:
+    reward:
+      function: reward
+      slot: 13
+      # Appended after the prize's own lore.
+      lore:
+        - ""
+        - "<gray>Round <white><round>/<rounds>"
+    info:
+      function: info
+      slot: 11
+      material: CLOCK
+      name: "<#c77dff>Auction"
+      lore:
+        - ""
+        - "<gray>Time left: <white><time>"
+        - "<gray>Bids placed: <white><bids>"
+        - "<gray>Top bidder: <white><leader>"
+        - "<gray>Top bid: <current-bid>"
+    bid:
+      function: bid
+      slot: 15
+      material: GOLD_INGOT
+      name: "<green><bold>Place Bid"
+      lore:
+        - ""
+        - "<gray>Next bid: <next-bid>"
+        - "<gray>Your balance: <balance>"
+        - ""
+        - "<yellow>Click to bid"
+    close:
+      function: close
+      slot: 26
+      material: BARRIER
+      name: "<red>Close"

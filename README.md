@@ -1,0 +1,96 @@
+# CKSMPBlackMarket
+
+Network-wide **black market auctions** for the Crescent Kingdom SMP, built on top of
+[CKSMPCore](https://github.com/CrescentKingdom-Studio/CKSMPCore). On a schedule (or on demand) a run of secret
+prizes goes up for auction one at a time; the highest bid when the timer ends wins. Everything is synced
+across every shard of the network, so it does not matter which server a player is on, or whether they are
+online when they win.
+
+Inspired by AxDarkAuctions. The code is written from scratch for CKSMPCore's shared Postgres/Redis stack; no
+code was taken from the open-source dark-auction plugins it was compared against.
+
+> **Status:** compiles and packages cleanly. It has **not yet been run on a live server**, so treat it as a
+> first drop to be tested on staging.
+
+## Features
+
+- Scheduled events (daily times in a time zone, optional weekday filter) plus manual `/blackmarket start`.
+- Countdown announcements, one round per prize, break between rounds, anti-snipe extension.
+- Weighted prize pool (`items.yml`): CKSMPItems ids, vanilla materials and/or console commands.
+- Bids are charged through Vault (CKSMPCore's economy); outbid players are refunded automatically.
+- Winners get the prize wherever they are; offline winners receive it on next login. Full inventories overflow
+  into CKSMPCore's `/stashbox`.
+- Config-driven bidding menu (hosted by CKSMPCore's `GUIManager`), boss bar, chat, sounds. All text is
+  MiniMessage in `Lang/messages.yml`, including `<center>` lines.
+- PlaceholderAPI: `%blackmarket_status%`, `_item`, `_round`, `_rounds`, `_high_bid`, `_next_bid`, `_leader`,
+  `_time_left`, `_next_event`.
+
+## Requirements
+
+Paper/Leaf 1.21.11, Java 25, **CKSMPCore**, **CKSMPItems**, Vault (provided by CKSMPCore). PlaceholderAPI is
+optional.
+
+## How it works across shards
+
+| Concern | Mechanism |
+|---|---|
+| Source of truth | Tables `cksmpbm_*` in CKSMPCore's Postgres (shared Hikari pool). |
+| Who wins a bid | One conditional `UPDATE ... RETURNING` (compare-and-set on round, leader and minimum bid). Two shards can never both lead. |
+| Refunds and prizes | A payout ledger. `DELETE ... RETURNING` claims it atomically, so only the shard hosting the player pays out, and exactly once. Claimed on bid/win events and on `PlayerDataLoadEvent`. |
+| Who runs the scheduler | A Postgres lease. One eligible shard holds it and renews it; if it dies, another takes over and resumes the event from the database. |
+| Live updates | One Redis channel via CKSMPCore's `RedisManager.registerPackets`. Each change is published once and applied by every shard, publisher included. |
+| Clock skew | Round end and lease expiry are decided with the database clock, never shard clocks. |
+
+Hot-path notes: the config is parsed once into immutable records (no YAML reads while bidding or rendering);
+each shard keeps a single volatile round snapshot that the menu, boss bar and placeholders read lock-free; the
+menu re-renders only the slots whose text changed; the scheduler tick is a few timestamp comparisons and only
+touches the database on a state change or lease renewal.
+
+## Installation
+
+1. Build with `./gradlew build` and drop `build/libs/CKSMPBlackMarket-1.0.0.jar` into `plugins/` on every shard.
+   Config files are written on first start. **Keep `config.yml`, `items.yml`, `Lang/` and `Menus/` identical on every shard.**
+2. On shards that must never drive events (e.g. a lobby) set `leader.eligible: false`.
+3. Set `participate: false` on shards that should not show the menu / broadcasts.
+4. The tables are created automatically (`CREATE TABLE IF NOT EXISTS`).
+
+## Commands and permissions
+
+| Command | Permission | Default |
+|---|---|---|
+| `/blackmarket` (`/bm`, `/darkauction`) opens the menu | `cksmpblackmarket.commands.open` | everyone |
+| `/blackmarket status` | `cksmpblackmarket.commands.status` | everyone |
+| `/blackmarket history` | `cksmpblackmarket.commands.history` | everyone |
+| `/blackmarket start` | `cksmpblackmarket.commands.admin.start` | op |
+| `/blackmarket stop` (cancels, refunds the leading bid) | `cksmpblackmarket.commands.admin.stop` | op |
+| `/blackmarket skip` (ends the current round now) | `cksmpblackmarket.commands.admin.skip` | op |
+| `/blackmarket reload` | `cksmpblackmarket.commands.admin.reload` | op |
+
+`start`, `stop` and `skip` can be run from any shard; the request is relayed to whichever shard holds the lease.
+
+## Configuring prizes
+
+See the header of [`items.yml`](src/main/resources/items.yml). Bid maths per prize: the first bid is
+`start-bid`, then `current + max(min-increment, current * increment-percent)`.
+
+## Known limitations
+
+- A bid is "wallet charged, then database settled". If a shard crashes in the instant between the two, the
+  charge is not returned automatically. Money and prizes already in the ledger are safe.
+- Payouts are deleted from the ledger as they are claimed; a crash between the claim and the delivery on the
+  player's shard can lose that delivery. Failures the plugin can see (player left, reward removed from config)
+  are restored to the ledger.
+- Shard clocks only affect what the countdown displays; they should still be NTP-synced.
+- Config is per shard and is not synced; keep the files identical.
+
+## Building
+
+```
+./gradlew build
+```
+
+Needs `CKSMPCore` and `CKSMPItems` in your local Maven repository (`./gradlew publishToMavenLocal` in each).
+
+## License
+
+MIT, see [LICENSE](LICENSE).
