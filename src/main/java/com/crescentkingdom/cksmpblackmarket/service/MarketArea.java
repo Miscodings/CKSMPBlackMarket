@@ -1,6 +1,7 @@
 package com.crescentkingdom.cksmpblackmarket.service;
 
 import com.crescentkingdom.cksmpblackmarket.CKSMPBlackMarket;
+import com.crescentkingdom.cksmpblackmarket.config.Settings;
 import com.crescentkingdom.cksmpcore.CKSMPCore;
 import com.crescentkingdom.cksmpcore.Managers.PlayerData.Data.PlayerData;
 import com.crescentkingdom.cksmpcore.Managers.PlayerData.location.CurrentLocationData;
@@ -57,7 +58,7 @@ public final class MarketArea {
         Location at = player.getLocation();
         if (at.getWorld() == null) return false;
 
-        return inside(spot, currentServer, at.getWorld().getName(), at.getX(), at.getZ());
+        return inside(spot, currentServer, at.getWorld().getName(), at.getX(), at.getY(), at.getZ());
     }
 
     /** Whether a stored /back destination lies in the market (it must never be used to "leave" it). */
@@ -65,14 +66,28 @@ public final class MarketArea {
         ConfigurationSection spot = spot();
         if (spot == null) return false;
 
-        return inside(spot, destination.getServerID(), destination.getWorldName(), destination.getX(), destination.getZ());
+        return inside(spot, destination.getServerID(), destination.getWorldName(), destination.getX(), destination.getY(), destination.getZ());
     }
 
-    private boolean inside(ConfigurationSection spot, String serverId, String world, double x, double z) {
+    /**
+     * Same shard and world as the warp, then: inside the area.min / area.max cuboid if one is set (full X/Y/Z, so a
+     * room under spawn does not include spawn), else within area.radius of the warp on X/Z, else the whole world.
+     */
+    private boolean inside(ConfigurationSection spot, String serverId, String world, double x, double y, double z) {
         if (!ServerUtils.isOnCorrectServer(spot.getString("server-id", ""), serverId)) return false;
         if (!world.equals(spot.getString("world"))) return false;
 
-        double radius = plugin.config().settings().areaRadius();
+        Settings settings = plugin.config().settings();
+        if (settings.hasAreaBox()) {
+            var min = settings.areaMin();
+            var max = settings.areaMax();
+
+            return x >= Math.min(min.get(0), max.get(0)) && x <= Math.max(min.get(0), max.get(0))
+                    && y >= Math.min(min.get(1), max.get(1)) && y <= Math.max(min.get(1), max.get(1))
+                    && z >= Math.min(min.get(2), max.get(2)) && z <= Math.max(min.get(2), max.get(2));
+        }
+
+        double radius = settings.areaRadius();
         if (radius <= 0) return true;
 
         return Math.abs(x - spot.getDouble("x")) <= radius && Math.abs(z - spot.getDouble("z")) <= radius;

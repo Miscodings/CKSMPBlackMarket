@@ -59,6 +59,24 @@ class LogicTest {
     }
 
     @Test
+    void areaBoxNeedsBothCornersWithThreeNumbers() {
+        YamlConfiguration yaml = new YamlConfiguration();
+        assertFalse(Settings.parse(yaml, LOG).hasAreaBox(), "unset");
+
+        yaml.set("area.min", List.of(1, 2, 3));
+        assertFalse(Settings.parse(yaml, LOG).hasAreaBox(), "one corner is not a box");
+
+        yaml.set("area.max", List.of(10, 20));
+        assertFalse(Settings.parse(yaml, LOG).hasAreaBox(), "a malformed corner is ignored");
+
+        yaml.set("area.max", List.of(10, 20, 30));
+        Settings s = Settings.parse(yaml, LOG);
+        assertTrue(s.hasAreaBox());
+        assertEquals(List.of(1.0, 2.0, 3.0), s.areaMin());
+        assertEquals(List.of(10.0, 20.0, 30.0), s.areaMax());
+    }
+
+    @Test
     void slotSearchFindsNextTimeAndNeverScansFrom1970() {
         YamlConfiguration yaml = new YamlConfiguration();
         yaml.set("schedule.zone", "America/New_York");

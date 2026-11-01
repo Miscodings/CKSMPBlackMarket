@@ -56,8 +56,16 @@ public record Settings(
         double editorPercentStep,
         int editorShiftMultiplier,
         String areaWarp,
-        double areaRadius
+        double areaRadius,
+        List<Double> areaMin,
+        List<Double> areaMax
 ) {
+
+    /** The market cuboid when area.min and area.max are both set (3 numbers each), else empty lists. */
+    public boolean hasAreaBox() {
+        return areaMin.size() == 3 && areaMax.size() == 3;
+    }
+
 
     public Sound sound(String key) {
         return sounds.get(key);
@@ -173,8 +181,16 @@ public record Settings(
                 Math.max(0.001, c.getDouble("editor.percent-step", 0.01)),
                 Math.max(2, c.getInt("editor.shift-multiplier", 10)),
                 c.getString("area.warp", "blackmarket"),
-                Math.max(0, c.getDouble("area.radius", 0))
+                Math.max(0, c.getDouble("area.radius", 0)),
+                corner(c, "area.min"),
+                corner(c, "area.max")
         );
+    }
+
+    /** [x, y, z] or empty when missing or malformed. */
+    private static List<Double> corner(FileConfiguration c, String path) {
+        List<Double> values = c.getDoubleList(path);
+        return values.size() == 3 ? List.copyOf(values) : List.of();
     }
 
     private static Map<String, Sound> parseSounds(ConfigurationSection section, Logger log) {

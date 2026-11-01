@@ -10,7 +10,11 @@ participate: true
 # see broadcasts and the boss bar or can bid, and /blackmarket leave sends them back like /back.
 area:
   warp: "blackmarket"
-  # Blocks around the warp (square, full height) that count as inside. 0 = the whole warp world.
+  # Best for a room inside a shared world: opposite corners [x, y, z] of a cuboid, in the warp's world. Both must be
+  # set; when they are, radius is ignored. Leave commented out to fall back to radius.
+  # min: [0, 0, 0]
+  # max: [0, 0, 0]
+  # Without min/max: blocks around the warp (square on X/Z, any height) that count as inside. 0 = the whole warp world.
   radius: 0
 
 leader:
