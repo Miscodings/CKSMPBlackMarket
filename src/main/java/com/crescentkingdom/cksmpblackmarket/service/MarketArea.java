@@ -1,0 +1,140 @@
+package com.crescentkingdom.cksmpblackmarket.service;
+
+import com.crescentkingdom.cksmpblackmarket.CKSMPBlackMarket;
+import com.crescentkingdom.cksmpcore.CKSMPCore;
+import com.crescentkingdom.cksmpcore.Managers.PlayerData.Data.PlayerData;
+import com.crescentkingdom.cksmpcore.Managers.PlayerData.location.CurrentLocationData;
+import com.crescentkingdom.cksmpcore.Utils.ColourUtils;
+import com.crescentkingdom.cksmpcore.Utils.ServerUtils;
+import com.crescentkingdom.cksmpcore.timers.PlayerBackTimer;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
+
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * The market area, defined by a CKSMPCore warp so its shard, world and position are kept in one place.
+ * A player is "inside" when they are on the warp's shard, in its world and (if a radius is set) near it;
+ * that is the only audience for broadcasts, the boss bar and bidding. Membership is derived from where the
+ * player is standing, never remembered, so leaving by any route (/spawn, /home, /warp, a Lands teleport,
+ * an admin) drops them from the market on the spot and nothing here can send them anywhere afterwards.
+ */
+public final class MarketArea {
+
+    /** How long a repeated /blackmarket or /blackmarket leave is ignored while the first one is still travelling. */
+    private static final long PENDING_MS = 10_000;
+
+    private final CKSMPBlackMarket plugin;
+    private final ColourUtils colours = new ColourUtils();
+    private final Map<UUID, Long> entering = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> leaving = new ConcurrentHashMap<>();
+
+    public MarketArea(CKSMPBlackMarket plugin) {
+        this.plugin = plugin;
+    }
+
+    /** The warp's location section, or null when the warp does not exist on this shard. */
+    private ConfigurationSection spot() {
+        FileConfiguration warp = plugin.core().getPluginInstance().getWarpsManager().getWarpConfigFilesCache().get(plugin.config().settings().areaWarp());
+        return warp == null ? null : warp.getConfigurationSection("warp.location");
+    }
+
+    public boolean isConfigured() {
+        return spot() != null;
+    }
+
+    /** Whether the player is standing in the market. Safe from any thread (reads the player's last known location). */
+    public boolean contains(Player player) {
+        ConfigurationSection spot = spot();
+        if (spot == null) return false;
+
+        String currentServer = plugin.core().getServerManager().getServerData().getServerID();
+        Location at = player.getLocation();
+        if (at.getWorld() == null) return false;
+
+        return inside(spot, currentServer, at.getWorld().getName(), at.getX(), at.getZ());
+    }
+
+    /** Whether a stored /back destination lies in the market (it must never be used to "leave" it). */
+    private boolean contains(CurrentLocationData destination) {
+        ConfigurationSection spot = spot();
+        if (spot == null) return false;
+
+        return inside(spot, destination.getServerID(), destination.getWorldName(), destination.getX(), destination.getZ());
+    }
+
+    private boolean inside(ConfigurationSection spot, String serverId, String world, double x, double z) {
+        if (!ServerUtils.isOnCorrectServer(spot.getString("server-id", ""), serverId)) return false;
+        if (!world.equals(spot.getString("world"))) return false;
+
+        double radius = plugin.config().settings().areaRadius();
+        if (radius <= 0) return true;
+
+        return Math.abs(x - spot.getDouble("x")) <= radius && Math.abs(z - spot.getDouble("z")) <= radius;
+    }
+
+    /** Warps the player in through CKSMPCore, so the warmup, combat check and /back origin all behave like /warp. */
+    public void enter(Player player) {
+        if (!claim(entering, player.getUniqueId())) return;
+
+        player.performCommand("warp " + plugin.config().settings().areaWarp());
+    }
+
+    /**
+     * Same as /back (combat check, cross-server) but instant, with the guards /back lacks here: only from inside
+     * the market, never into it, and ignored while a previous leave is travelling.
+     */
+    public void leave(Player player) {
+        CKSMPCore core = plugin.core().getPluginInstance();
+        PlayerData data = plugin.core().getPlayerAPI().getProfile(player.getUniqueId());
+        if (data == null) return;
+
+        CurrentLocationData back = data.getBackLocation();
+        if (back == null || contains(back)) {
+            player.sendMessage(colours.miniFormat(core.getConfigManager().getLang().getString("commands.back.no-location")));
+            return;
+        }
+
+        if (!player.hasPermission("cksmpcore.combatlog.bypass") && data.getTimerCache().containsKey("combat_timer")) {
+            player.sendMessage(colours.miniFormat(core.getConfigManager().getLang().getString("combat.in-combat")));
+            return;
+        }
+
+        if (!claim(leaving, player.getUniqueId())) return;
+
+        // Leaving is instant, no warmup: there is no window in which another teleport could race it.
+        new PlayerBackTimer(core, player, data, back).completeTeleport();
+    }
+
+    /** True the first time within the window; a repeat while the first is still pending is ignored. */
+    private boolean claim(Map<UUID, Long> pending, UUID uuid) {
+        long now = System.currentTimeMillis();
+        Long until = pending.get(uuid);
+        if (until != null && until > now) return false;
+
+        pending.put(uuid, now + PENDING_MS);
+        return true;
+    }
+
+    /** Once a second: forgets enters/leaves that completed, expired, or whose player went offline. */
+    public void tick() {
+        long now = System.currentTimeMillis();
+
+        entering.entrySet().removeIf(e -> e.getValue() <= now || playerGone(e.getKey()) || insideNow(e.getKey()));
+        leaving.entrySet().removeIf(e -> e.getValue() <= now || playerGone(e.getKey()) || !insideNow(e.getKey()));
+    }
+
+    private boolean playerGone(UUID uuid) {
+        return Bukkit.getPlayer(uuid) == null;
+    }
+
+    private boolean insideNow(UUID uuid) {
+        Player player = Bukkit.getPlayer(uuid);
+        return player != null && contains(player);
+    }
+}

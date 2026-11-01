@@ -22,7 +22,6 @@ public final class PlayerListener implements Listener {
         Player player = event.getPlayer();
 
         plugin.payouts().claim(player.getUniqueId());
-        player.getScheduler().run(plugin, task -> plugin.bossBar().onJoin(player), null);
     }
 
     @EventHandler

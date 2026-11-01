@@ -9,8 +9,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 /**
- * Who receives broadcasts: everyone on this shard except players who switched the announcement toggle
- * off in CKSMPCore's native player settings. Reads only the local PlayerData copy (no Redis round trip),
+ * Who receives broadcasts: players standing in the market area, except those who switched the announcement
+ * toggle off in CKSMPCore's native player settings. Reads only the local PlayerData copy (no Redis round trip),
  * and treats a missing key as "on" so the plugin works before Core's config/menu gain the setting.
  */
 public final class Audiences {
@@ -22,7 +22,12 @@ public final class Audiences {
     }
 
     public Audience announcements() {
-        return Bukkit.getServer().filterAudience(audience -> !(audience instanceof Player player) || wants(player));
+        return Bukkit.getServer().filterAudience(audience -> !(audience instanceof Player player) || eligible(player));
+    }
+
+    /** In the market and not opted out. */
+    public boolean eligible(Player player) {
+        return plugin.area().contains(player) && wants(player);
     }
 
     public boolean wants(Player player) {

@@ -5,6 +5,14 @@
 # Show broadcasts / boss bar / menu on this shard.
 participate: true
 
+# Where the market happens. The area is read from a CKSMPCore warp (Warps/<warp>.yml on every shard), so its
+# shard, world and position live in one place. /blackmarket warps players there; only players standing inside it
+# see broadcasts and the boss bar or can bid, and /blackmarket leave sends them back like /back.
+area:
+  warp: "blackmarket"
+  # Blocks around the warp (square, full height) that count as inside. 0 = the whole warp world.
+  radius: 0
+
 leader:
   # One eligible shard at a time runs the scheduler (Postgres lease, automatic failover).
   # Set false on shards that should never drive events (e.g. a lobby).
@@ -36,8 +44,8 @@ schedule:
   min-online-players: 1
 
 event:
-  # How many items are auctioned per event.
-  rounds: 5
+  # How many items are auctioned per event, drawn at random from the whole enabled pool (weights apply).
+  rounds: 4
   # Wait between the winner announcement and the next item (AxDarkAuctions: time-between-bids).
   break-seconds: 5
 
@@ -85,7 +93,7 @@ bossbar:
 
 # Sounds: set `sound` to "" to disable one.
 sounds:
-  event-announce: { sound: "minecraft:block.bell.use", source: MASTER, volume: 0.8, pitch: 0.7 }
+  event-announce: { sound: "", source: MASTER, volume: 0.8, pitch: 0.7 }
   round-start: { sound: "minecraft:block.end_portal.spawn", source: MASTER, volume: 0.4, pitch: 1.4 }
   bidding-open: { sound: "minecraft:block.note_block.pling", source: MASTER, volume: 0.8, pitch: 1.2 }
   bid-success: { sound: "minecraft:entity.experience_orb.pickup", source: MASTER, volume: 1.0, pitch: 1.3 }

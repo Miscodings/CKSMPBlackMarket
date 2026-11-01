@@ -12,12 +12,19 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-/** One shared boss bar per shard, shown to everyone while a round is live. Global-region thread only. */
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * One shared boss bar per shard, shown while a round is live to players standing in the market area.
+ * The once-a-second update also adds players who walk in and removes those who leave. Global-region thread only.
+ */
 public final class BossBarService {
 
     private final CKSMPBlackMarket plugin;
     private final BossBar bar = BossBar.bossBar(Component.empty(), 1f, BossBar.Color.PURPLE, BossBar.Overlay.PROGRESS);
-    private volatile boolean shown;
+    private final Set<UUID> viewers = new HashSet<>();
 
     public BossBarService(CKSMPBlackMarket plugin) {
         this.plugin = plugin;
@@ -46,21 +53,30 @@ public final class BossBarService {
         bar.color(s.bossBarColor());
         bar.overlay(s.bossBarOverlay());
 
-        if (!shown) {
-            plugin.audiences().announcements().showBossBar(bar);
-            shown = true;
-        }
+        syncViewers();
     }
 
-    /** Players who connect mid-round still get the bar. Safe from any thread. */
-    public void onJoin(Player player) {
-        if (shown && plugin.audiences().wants(player)) player.showBossBar(bar);
+    /** Shows the bar to eligible players who do not have it and takes it from those who left the area. */
+    private void syncViewers() {
+        Set<UUID> online = new HashSet<>();
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            online.add(player.getUniqueId());
+
+            if (plugin.audiences().eligible(player)) {
+                if (viewers.add(player.getUniqueId())) player.showBossBar(bar);
+            } else if (viewers.remove(player.getUniqueId())) {
+                player.hideBossBar(bar);
+            }
+        }
+
+        viewers.retainAll(online);
     }
 
     public void hide() {
-        if (!shown) return;
+        if (viewers.isEmpty()) return;
 
         Bukkit.getServer().hideBossBar(bar);
-        shown = false;
+        viewers.clear();
     }
 }

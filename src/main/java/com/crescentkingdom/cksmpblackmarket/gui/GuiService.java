@@ -50,6 +50,15 @@ public final class GuiService {
         resync(true);
     }
 
+    /** A new item is up: opens the bidding menu for everyone standing in the market who does not have it open yet. */
+    public void openForArea() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (viewers.containsKey(player.getUniqueId()) || !plugin.area().contains(player)) continue;
+
+            open(player, false);
+        }
+    }
+
     public void remove(UUID uuid) {
         viewers.remove(uuid);
     }
@@ -67,6 +76,13 @@ public final class GuiService {
             Player player = Bukkit.getPlayer(entry.getKey());
             if (player == null) {
                 viewers.remove(entry.getKey());
+                continue;
+            }
+
+            // Teleported out with the menu still open: close it rather than keep refreshing a market they left.
+            if (!plugin.area().contains(player)) {
+                viewers.remove(entry.getKey());
+                player.getScheduler().run(plugin, task -> player.closeInventory(), null);
                 continue;
             }
 

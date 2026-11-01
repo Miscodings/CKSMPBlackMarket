@@ -2,7 +2,7 @@
 # <prefix> is available in every message; lines starting with <center> are centred in chat.
 # Palette matches AxDarkAuctions: #7700FF / #D200FF / #DDDDDD, green #00FF00, red #FF0000 / #BB0000.
 
-prefix: "<#7700FF><b>BLACK MARKET</b></#7700FF> <gray>»</gray>"
+prefix: ""
 
 # <amount> is the formatted number.
 money-format: "<#86fe8a>$<amount>"
@@ -19,7 +19,8 @@ help:
   player:
     - " "
     - "<gradient:#7700FF:#FF00FF><b>Black Market</b></gradient> <gray>»"
-    - " <gray>- <white>/blackmarket <gray>| <#D200FF>Open the bidding menu!"
+    - " <gray>- <white>/blackmarket <gray>| <#D200FF>Go to the market, or open the bidding menu when you are there!"
+    - " <gray>- <white>/blackmarket leave <gray>| <#D200FF>Leave the market (same as /back)!"
     - " <gray>- <white>/blackmarket info <gray>| <#D200FF>Show when the next dark auction starts!"
     - " <gray>- <white>/blackmarket history <gray>| <#D200FF>See who won recently!"
     - " "
@@ -45,6 +46,11 @@ general:
   player-only: "<prefix> <#FF0000>You must be a player to use this command!"
   not-participating: "<prefix> <#FF0000>The dark auction is not held on this server!"
 
+area:
+  unavailable: "<prefix> <#FF0000>The Black Market is not open right now!"
+  not-inside: "<prefix> <#FF0000>You are not in the Black Market!"
+  not-inside-bid: "<prefix> <#FF0000>You must be inside the Black Market to bid! Use <white>/blackmarket<#FF0000> to go there."
+
 bid:
   no-round: "<prefix> <#FF0000>The dark auction is not running!"
   not-open: "<prefix> <#FF0000>The bidding has not started yet!"
@@ -64,11 +70,7 @@ payout:
   reward-missing: "<prefix> <#FF0000>The prize <white><id> <#FF0000>no longer exists, contact staff!"
 
 event:
-  announce:
-    - " "
-    - "<#D200FF>The <white>Black Market<#D200FF> is starting in <white><seconds> <#D200FF>seconds!"
-    - "<#DDDDDD>Join with /blackmarket!"
-    - " "
+  announce: []
   started: "<prefix> <#D200FF>The dark auction is starting! Get ready!"
   finished: "<prefix> <#D200FF>There are no more items to be auctioned! Today's dark auction is over, come back next time!"
   cancelled-low-players: "<prefix> <#D200FF>There are not enough players, so the dark auction is not going to be held!"

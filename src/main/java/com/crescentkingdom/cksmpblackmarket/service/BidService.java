@@ -59,6 +59,11 @@ public final class BidService {
         Settings settings = cfg.settings();
         long now = System.currentTimeMillis();
 
+        if (!plugin.area().contains(player)) {
+            fail(player, cfg, "area.not-inside-bid");
+            return;
+        }
+
         RoundView round = plugin.state().current();
         PoolEntry entry = round == null ? null : cfg.pool().get(round.entryId());
         if (round == null || entry == null || !round.isActiveAt(now)) {

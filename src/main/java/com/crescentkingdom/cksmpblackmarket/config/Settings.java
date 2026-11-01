@@ -54,7 +54,9 @@ public record Settings(
         double editorBidStep,
         double editorIncrementStep,
         double editorPercentStep,
-        int editorShiftMultiplier
+        int editorShiftMultiplier,
+        String areaWarp,
+        double areaRadius
 ) {
 
     public Sound sound(String key) {
@@ -169,7 +171,9 @@ public record Settings(
                 Math.max(0.01, c.getDouble("editor.bid-step", 100)),
                 Math.max(0.01, c.getDouble("editor.increment-step", 10)),
                 Math.max(0.001, c.getDouble("editor.percent-step", 0.01)),
-                Math.max(2, c.getInt("editor.shift-multiplier", 10))
+                Math.max(2, c.getInt("editor.shift-multiplier", 10)),
+                c.getString("area.warp", "blackmarket"),
+                Math.max(0, c.getDouble("area.radius", 0))
         );
     }
 

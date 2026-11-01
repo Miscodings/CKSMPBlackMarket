@@ -160,6 +160,7 @@ public final class SyncService {
             cfg.lang().send(audience, "round.showing", RoundText.resolver(plugin, cfg, round, System.currentTimeMillis()));
             cfg.play(audience, "round-start");
             plugin.bossBar().update();
+            plugin.gui().openForArea();
         });
     }
 

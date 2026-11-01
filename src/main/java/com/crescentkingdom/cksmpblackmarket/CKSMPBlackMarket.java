@@ -13,6 +13,7 @@ import com.crescentkingdom.cksmpblackmarket.service.Audiences;
 import com.crescentkingdom.cksmpblackmarket.service.BidService;
 import com.crescentkingdom.cksmpblackmarket.service.BossBarService;
 import com.crescentkingdom.cksmpblackmarket.service.EventScheduler;
+import com.crescentkingdom.cksmpblackmarket.service.MarketArea;
 import com.crescentkingdom.cksmpblackmarket.service.MarketState;
 import com.crescentkingdom.cksmpblackmarket.service.PayoutService;
 import com.crescentkingdom.cksmpblackmarket.service.RewardService;
@@ -46,6 +47,7 @@ public final class CKSMPBlackMarket extends JavaPlugin {
     private SyncService sync;
     private PrizeService prizes;
     private EditorService editor;
+    private MarketArea area;
     private Audiences audiences;
     private BossBarService bossBar;
     private GuiService gui;
@@ -93,6 +95,7 @@ public final class CKSMPBlackMarket extends JavaPlugin {
         prizes = new PrizeService(this);
         payouts = new PayoutService(this);
         bids = new BidService(this);
+        area = new MarketArea(this);
         audiences = new Audiences(this);
         sync = new SyncService(this);
         bossBar = new BossBarService(this);
@@ -124,6 +127,7 @@ public final class CKSMPBlackMarket extends JavaPlugin {
 
         // One shared 1s heartbeat for everything time-driven on this shard.
         Bukkit.getGlobalRegionScheduler().runAtFixedRate(this, task -> {
+            area.tick();
             bossBar.update();
             gui.tick();
         }, 20L, 20L);
@@ -197,6 +201,10 @@ public final class CKSMPBlackMarket extends JavaPlugin {
 
     public EditorService editor() {
         return editor;
+    }
+
+    public MarketArea area() {
+        return area;
     }
 
     public Audiences audiences() {

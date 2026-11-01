@@ -61,7 +61,7 @@ class ResourcesTest {
         Lang lang = Lang.parse(load("Lang/messages.yml"));
 
         for (String key : new String[]{
-                "prefix", "money-format", "no-leader-name", "time.second", "time.minute", "time.hour", "time.day",
+                "area.unavailable", "area.not-inside", "area.not-inside-bid", "money-format", "no-leader-name", "time.second", "time.minute", "time.hour", "time.day",
                 "bid.no-round", "bid.not-open", "bid.already-leading", "bid.insufficient", "bid.withdraw-failed",
                 "bid.outraced", "bid.error", "bid.placed", "bid.outbid", "bid.broadcast",
                 "payout.refund", "payout.reward", "payout.stashed", "payout.reward-missing",
@@ -75,7 +75,8 @@ class ResourcesTest {
             assertFalse(lang.raw(key).isEmpty(), "missing lang key " + key);
         }
 
-        for (String list : new String[]{"event.announce", "help.player", "help.admin", "menu.idle-lore"}) {
+        // prefix and event.announce are deliberately empty: no chat tag and no pre-event countdown spam.
+        for (String list : new String[]{"help.player", "help.admin", "menu.idle-lore"}) {
             assertFalse(lang.components(list).get(0).toString().contains("missing lang"), "missing lang list " + list);
         }
     }
