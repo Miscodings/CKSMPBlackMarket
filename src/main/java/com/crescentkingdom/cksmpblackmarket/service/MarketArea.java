@@ -2,12 +2,7 @@ package com.crescentkingdom.cksmpblackmarket.service;
 
 import com.crescentkingdom.cksmpblackmarket.CKSMPBlackMarket;
 import com.crescentkingdom.cksmpblackmarket.config.Settings;
-import com.crescentkingdom.cksmpcore.CKSMPCore;
-import com.crescentkingdom.cksmpcore.Managers.PlayerData.Data.PlayerData;
-import com.crescentkingdom.cksmpcore.Managers.PlayerData.location.CurrentLocationData;
-import com.crescentkingdom.cksmpcore.Utils.ColourUtils;
 import com.crescentkingdom.cksmpcore.Utils.ServerUtils;
-import com.crescentkingdom.cksmpcore.timers.PlayerBackTimer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
@@ -27,13 +22,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class MarketArea {
 
-    /** How long a repeated /blackmarket or /blackmarket leave is ignored while the first one is still travelling. */
+    /** How long a repeated /blackmarket is ignored while the first warp is still travelling. */
     private static final long PENDING_MS = 10_000;
 
     private final CKSMPBlackMarket plugin;
-    private final ColourUtils colours = new ColourUtils();
     private final Map<UUID, Long> entering = new ConcurrentHashMap<>();
-    private final Map<UUID, Long> leaving = new ConcurrentHashMap<>();
 
     public MarketArea(CKSMPBlackMarket plugin) {
         this.plugin = plugin;
@@ -80,14 +73,6 @@ public final class MarketArea {
         return inside(spot, currentServer, at.getWorld().getName(), at.getX(), at.getY(), at.getZ());
     }
 
-    /** Whether a stored /back destination lies in the market (it must never be used to "leave" it). */
-    private boolean contains(CurrentLocationData destination) {
-        ConfigurationSection spot = spot();
-        if (spot == null) return false;
-
-        return inside(spot, destination.getServerID(), destination.getWorldName(), destination.getX(), destination.getY(), destination.getZ());
-    }
-
     /**
      * Same shard and world as the warp, then: inside the area.min / area.max cuboid if one is set (full X/Y/Z, so a
      * room under spawn does not include spawn), else within area.radius of the warp on X/Z, else the whole world.
@@ -119,32 +104,6 @@ public final class MarketArea {
         player.performCommand("warp " + plugin.config().settings().areaWarp());
     }
 
-    /**
-     * Same as /back (combat check, cross-server) but instant, with the guards /back lacks here: only from inside
-     * the market, never into it, and ignored while a previous leave is travelling.
-     */
-    public void leave(Player player) {
-        CKSMPCore core = plugin.core().getPluginInstance();
-        PlayerData data = plugin.core().getPlayerAPI().getProfile(player.getUniqueId());
-        if (data == null) return;
-
-        CurrentLocationData back = data.getBackLocation();
-        if (back == null || contains(back)) {
-            player.sendMessage(colours.miniFormat(core.getConfigManager().getLang().getString("commands.back.no-location")));
-            return;
-        }
-
-        if (!player.hasPermission("cksmpcore.combatlog.bypass") && data.getTimerCache().containsKey("combat_timer")) {
-            player.sendMessage(colours.miniFormat(core.getConfigManager().getLang().getString("combat.in-combat")));
-            return;
-        }
-
-        if (!claim(leaving, player.getUniqueId())) return;
-
-        // Leaving is instant, no warmup: there is no window in which another teleport could race it.
-        new PlayerBackTimer(core, player, data, back).completeTeleport();
-    }
-
     /** True the first time within the window; a repeat while the first is still pending is ignored. */
     private boolean claim(Map<UUID, Long> pending, UUID uuid) {
         long now = System.currentTimeMillis();
@@ -155,12 +114,11 @@ public final class MarketArea {
         return true;
     }
 
-    /** Once a second: forgets enters/leaves that completed, expired, or whose player went offline. */
+    /** Once a second: forgets enters that completed, expired, or whose player went offline. */
     public void tick() {
         long now = System.currentTimeMillis();
 
         entering.entrySet().removeIf(e -> e.getValue() <= now || playerGone(e.getKey()) || insideNow(e.getKey()));
-        leaving.entrySet().removeIf(e -> e.getValue() <= now || playerGone(e.getKey()) || !insideNow(e.getKey()));
     }
 
     private boolean playerGone(UUID uuid) {

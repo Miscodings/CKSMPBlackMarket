@@ -27,7 +27,6 @@ permissions:
     default: op
     children:
       cksmpblackmarket.commands.open: true
-      cksmpblackmarket.commands.leave: true
       cksmpblackmarket.commands.history: true
       cksmpblackmarket.commands.status: true
       cksmpblackmarket.commands.admin.start: true
@@ -38,9 +37,6 @@ permissions:
       cksmpblackmarket.commands.admin.setprices: true
   cksmpblackmarket.commands.open:
     description: Open the black market bidding menu
-    default: true
-  cksmpblackmarket.commands.leave:
-    description: Leave the black market area (same as /back)
     default: true
   cksmpblackmarket.commands.history:
     description: View recent black market winners

@@ -32,7 +32,6 @@ public final class BlackMarketCommandManager implements CommandManagers {
     public BlackMarketCommandManager(CKSMPBlackMarket plugin) {
         this.plugin = plugin;
 
-        commands.add(this::leave);
         commands.add(this::history);
         commands.add(this::status);
         commands.add(() -> control("start", "START", "admin.start-sent"));
@@ -77,20 +76,6 @@ public final class BlackMarketCommandManager implements CommandManagers {
 
         commands.forEach(sub -> root.withSubcommand(sub.onCommand()));
         root.register();
-    }
-
-    /** Same as /back: Core remembered where the player was before warping into the market. */
-    private CommandAPICommand leave() {
-        return new CommandAPICommand("leave")
-                .withPermission("cksmpblackmarket.commands.leave")
-                .executesPlayer((player, args) -> {
-                    if (!plugin.area().contains(player)) {
-                        plugin.config().lang().send(player, "area.not-inside");
-                        return;
-                    }
-
-                    plugin.area().leave(player);
-                });
     }
 
     private CommandAPICommand history() {

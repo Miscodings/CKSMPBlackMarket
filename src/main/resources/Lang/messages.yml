@@ -20,7 +20,6 @@ help:
     - " "
     - "<gradient:#7700FF:#FF00FF><b>Black Market</b></gradient> <gray>»"
     - " <gray>- <white>/blackmarket <gray>| <#D200FF>Go to the market, or open the bidding menu when you are there!"
-    - " <gray>- <white>/blackmarket leave <gray>| <#D200FF>Leave the market (same as /back)!"
     - " <gray>- <white>/blackmarket info <gray>| <#D200FF>Show when the next dark auction starts!"
     - " <gray>- <white>/blackmarket history <gray>| <#D200FF>See who won recently!"
     - " "
@@ -49,7 +48,6 @@ general:
 
 area:
   unavailable: "<prefix> <#FF0000>The Black Market is not open right now!"
-  not-inside: "<prefix> <#FF0000>You are not in the Black Market!"
   not-inside-bid: "<prefix> <#FF0000>You must be inside the Black Market to bid! Use <white>/blackmarket<#FF0000> to go there."
 
 bid:

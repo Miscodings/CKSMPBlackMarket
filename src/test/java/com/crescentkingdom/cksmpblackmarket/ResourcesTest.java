@@ -61,7 +61,7 @@ class ResourcesTest {
         Lang lang = Lang.parse(load("Lang/messages.yml"));
 
         for (String key : new String[]{
-                "area.unavailable", "area.not-inside", "area.not-inside-bid", "money-format", "no-leader-name", "time.second", "time.minute", "time.hour", "time.day",
+                "area.unavailable", "area.not-inside-bid", "money-format", "no-leader-name", "time.second", "time.minute", "time.hour", "time.day",
                 "bid.no-round", "bid.not-open", "bid.already-leading", "bid.insufficient", "bid.withdraw-failed",
                 "bid.outraced", "bid.error", "bid.outbid", "bid.broadcast",
                 "payout.refund", "payout.reward", "payout.stashed", "payout.reward-missing",

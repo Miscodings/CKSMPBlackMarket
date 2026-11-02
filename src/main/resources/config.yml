@@ -7,7 +7,7 @@ participate: true
 
 # Where the market happens. The area is read from a CKSMPCore warp (Warps/<warp>.yml on every shard), so its
 # shard, world and position live in one place. /blackmarket warps players there; only players standing inside it
-# see broadcasts and the boss bar or can bid, and /blackmarket leave sends them back like /back.
+# see broadcasts and the boss bar or can bid, and leaving is up to the players (an NPC, /back, /spawn, ...).
 area:
   warp: "blackmarket"
   # Best for a room inside a shared world: opposite corners [x, y, z] of a cuboid, in the warp's world. Both must be
