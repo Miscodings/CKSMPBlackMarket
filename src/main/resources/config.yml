@@ -17,6 +17,15 @@ area:
   # Without min/max: blocks around the warp (square on X/Z, any height) that count as inside. 0 = the whole warp world.
   radius: 0
 
+# The prize currently up for bidding floats as an item with its name above it, in the market warp's world (only the
+# shard that hosts that world spawns it). Not persistent: it disappears when the round ends.
+display:
+  enabled: true
+  position: [82, 57, 29.3]
+  scale: 1.5
+  # Blocks between the item's top and the name above it.
+  text-offset: 0.3
+
 leader:
   # One eligible shard at a time runs the scheduler (Postgres lease, automatic failover).
   # Set false on shards that should never drive events (e.g. a lobby).
@@ -37,9 +46,10 @@ schedule:
   # Restrict to days of the week (MONDAY..SUNDAY). Empty = every day.
   days: []
   # How long before the first item the event is announced (AxDarkAuctions: start-wait-time).
-  announce-seconds: 60
-  # Seconds-remaining marks that send the "is starting in X seconds" broadcast (AxDarkAuctions: starting-broadcast).
-  announce-at: [60, 50, 40, 30, 20, 10]
+  announce-seconds: 30
+  # Seconds-remaining marks that send the network-wide "is starting in X seconds" chat notice. A last "starting now"
+  # notice always goes out when the first item goes up.
+  announce-at: [30, 10]
   # Announcement window for /blackmarket start.
   manual-announce-seconds: 30
   # A slot missed by more than this (server was down) is skipped, not run late.

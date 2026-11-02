@@ -273,6 +273,7 @@ public final class EventScheduler {
             return;
         }
 
+        plugin.sync().publishAnnounce(0, event.poolIds().size());
         beginRound(cfg, 0, now);
     }
 

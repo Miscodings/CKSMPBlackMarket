@@ -30,6 +30,7 @@ help:
     - " <gray>- <white>/blackmarket stop <gray>| <#D200FF>Stop the dark auction (refunds the top bid)!"
     - " <gray>- <white>/blackmarket skip <gray>| <#D200FF>End the current item now!"
     - " <gray>- <white>/blackmarket editor <gray>| <#D200FF>Open the prize editor!"
+    - " <gray>- <white>/blackmarket setprices <amount> [except words] <gray>| <#D200FF>Set every start bid at once!"
     - " <gray>- <white>/blackmarket reload <gray>| <#D200FF>Reload plugin"
     - " "
 
@@ -70,7 +71,11 @@ payout:
   reward-missing: "<prefix> <#FF0000>The prize <white><id> <#FF0000>no longer exists, contact staff!"
 
 event:
-  announce: []
+  # Network-wide, clickable. Sent at the schedule.announce-at marks and once more when the first item goes up.
+  announce:
+    - "<#D200FF>The Black Market starts in <white><seconds> seconds<#D200FF>! <click:run_command:/blackmarket><hover:show_text:'<#D200FF>Click to join'><white><u>/blackmarket</u></hover></click> <#D200FF>to join."
+  announce-now:
+    - "<#D200FF>The Black Market is starting now! <click:run_command:/blackmarket><hover:show_text:'<#D200FF>Click to join'><white><u>/blackmarket</u></hover></click> <#D200FF>to join."
   started: "<prefix> <#D200FF>The dark auction is starting! Get ready!"
   finished: "<prefix> <#D200FF>There are no more items to be auctioned! Today's dark auction is over, come back next time!"
   cancelled-low-players: "<prefix> <#D200FF>There are not enough players, so the dark auction is not going to be held!"
@@ -210,3 +215,5 @@ admin:
   stop-sent: "<prefix> <#00FF00>You have stopped the dark auction!"
   skip-sent: "<prefix> <#00FF00>You have ended the current item!"
   no-leader: "<prefix> <#FF0000>No server is running the dark auction scheduler right now!"
+  setprices-done: "<prefix> <#00FF00>Set the start bid of <white><count> <#00FF00>prizes to <white><amount><#00FF00>. Left alone: <white><skipped>"
+  setprices-no-match: "<prefix> <#FF0000>No prize id or name contains <white><word><#FF0000>, so nothing was changed."

@@ -140,14 +140,8 @@ public final class BidService {
         plugin.state().apply(outcome.view());
         plugin.sync().publishBid(outcome.view(), outcome.previousBidder(), outcome.previousBid());
 
-        TagResolver tags = TagResolver.resolver(
-                Placeholder.component("amount", Text.money(cfg.lang(), amount)),
-                Placeholder.component("item", plugin.rewards().name(cfg, entry.id(), entry)));
-
-        player.getScheduler().run(plugin, task -> {
-            cfg.lang().send(player, "bid.placed", tags);
-            cfg.play(player, "bid-success");
-        }, null);
+        // No chat line: the bid broadcast and the menu already show it. Only the confirmation sound remains.
+        player.getScheduler().run(plugin, task -> cfg.play(player, "bid-success"), null);
     }
 
     /** Returns a charged amount: straight to the wallet if the player is still here, else via the ledger. */

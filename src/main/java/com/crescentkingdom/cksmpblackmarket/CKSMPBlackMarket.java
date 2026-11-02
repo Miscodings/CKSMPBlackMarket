@@ -13,6 +13,7 @@ import com.crescentkingdom.cksmpblackmarket.service.Audiences;
 import com.crescentkingdom.cksmpblackmarket.service.BidService;
 import com.crescentkingdom.cksmpblackmarket.service.BossBarService;
 import com.crescentkingdom.cksmpblackmarket.service.EventScheduler;
+import com.crescentkingdom.cksmpblackmarket.service.ItemDisplayService;
 import com.crescentkingdom.cksmpblackmarket.service.MarketArea;
 import com.crescentkingdom.cksmpblackmarket.service.MarketState;
 import com.crescentkingdom.cksmpblackmarket.service.PayoutService;
@@ -51,6 +52,7 @@ public final class CKSMPBlackMarket extends JavaPlugin {
     private Audiences audiences;
     private BossBarService bossBar;
     private GuiService gui;
+    private ItemDisplayService itemDisplay;
     private EventScheduler scheduler;
 
     @Override
@@ -100,6 +102,7 @@ public final class CKSMPBlackMarket extends JavaPlugin {
         sync = new SyncService(this);
         bossBar = new BossBarService(this);
         gui = new GuiService(this);
+        itemDisplay = new ItemDisplayService(this);
         scheduler = new EventScheduler(this, core.getServerManager().getServerData().getServerID());
 
         try {
@@ -130,6 +133,7 @@ public final class CKSMPBlackMarket extends JavaPlugin {
             area.tick();
             bossBar.update();
             gui.tick();
+            itemDisplay.update();
         }, 20L, 20L);
 
         gui.resync(true);
@@ -140,6 +144,7 @@ public final class CKSMPBlackMarket extends JavaPlugin {
     public void onDisable() {
         if (scheduler != null) scheduler.stop();
         if (bossBar != null) bossBar.hide();
+        if (itemDisplay != null) itemDisplay.clear();
 
         if (dbExecutor != null) {
             dbExecutor.shutdown();

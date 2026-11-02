@@ -58,7 +58,11 @@ public record Settings(
         String areaWarp,
         double areaRadius,
         List<Double> areaMin,
-        List<Double> areaMax
+        List<Double> areaMax,
+        boolean displayEnabled,
+        List<Double> displayPosition,
+        double displayScale,
+        double displayTextOffset
 ) {
 
     /** The market cuboid when area.min and area.max are both set (3 numbers each), else empty lists. */
@@ -183,7 +187,11 @@ public record Settings(
                 c.getString("area.warp", "blackmarket"),
                 Math.max(0, c.getDouble("area.radius", 0)),
                 corner(c, "area.min"),
-                corner(c, "area.max")
+                corner(c, "area.max"),
+                c.getBoolean("display.enabled", true),
+                corner(c, "display.position"),
+                Math.max(0.1, c.getDouble("display.scale", 1.5)),
+                Math.max(0, c.getDouble("display.text-offset", 0.3))
         );
     }
 

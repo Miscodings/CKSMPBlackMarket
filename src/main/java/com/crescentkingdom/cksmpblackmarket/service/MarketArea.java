@@ -49,6 +49,25 @@ public final class MarketArea {
         return spot() != null;
     }
 
+    /**
+     * Where the prize is shown: display.position in the warp's world, only on the shard that hosts that world.
+     * Null on every other shard, when the warp or the position is missing, or when the world is not loaded.
+     */
+    public Location displayLocation() {
+        Settings settings = plugin.config().settings();
+        var position = settings.displayPosition();
+        if (!settings.displayEnabled() || position.size() != 3) return null;
+
+        ConfigurationSection spot = spot();
+        if (spot == null) return null;
+
+        String currentServer = plugin.core().getServerManager().getServerData().getServerID();
+        if (!ServerUtils.isOnCorrectServer(spot.getString("server-id", ""), currentServer)) return null;
+
+        org.bukkit.World world = Bukkit.getWorld(spot.getString("world", ""));
+        return world == null ? null : new Location(world, position.get(0), position.get(1), position.get(2));
+    }
+
     /** Whether the player is standing in the market. Safe from any thread (reads the player's last known location). */
     public boolean contains(Player player) {
         ConfigurationSection spot = spot();

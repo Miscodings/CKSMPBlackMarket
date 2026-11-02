@@ -31,7 +31,7 @@ class ResourcesTest {
 
         assertEquals(120, s.intervalMinutes());
         assertEquals(30, s.offsetMinutes());
-        assertEquals(60, s.announceSeconds());
+        assertEquals(30, s.announceSeconds());
         assertEquals(5, s.previewSeconds());
         assertEquals(15, s.roundSeconds());
         assertEquals(8, s.snipeWindowSeconds());
@@ -63,20 +63,20 @@ class ResourcesTest {
         for (String key : new String[]{
                 "area.unavailable", "area.not-inside", "area.not-inside-bid", "money-format", "no-leader-name", "time.second", "time.minute", "time.hour", "time.day",
                 "bid.no-round", "bid.not-open", "bid.already-leading", "bid.insufficient", "bid.withdraw-failed",
-                "bid.outraced", "bid.error", "bid.placed", "bid.outbid", "bid.broadcast",
+                "bid.outraced", "bid.error", "bid.outbid", "bid.broadcast",
                 "payout.refund", "payout.reward", "payout.stashed", "payout.reward-missing",
                 "event.started", "event.finished", "event.cancelled-low-players", "event.cancelled-admin",
                 "round.waiting", "round.showing", "round.bidding", "round.no-bids", "round.won", "round.you-won",
                 "bossbar.preview", "bossbar.title", "status.active", "status.idle-next", "status.idle-none",
                 "history.header", "history.line", "history.empty", "discord.event-start", "discord.round-won",
                 "general.reloaded", "general.reload-failed", "menu.idle-name", "menu.idle-none",
-                "admin.start-sent", "admin.stop-sent", "admin.skip-sent", "admin.no-leader",
+                "admin.start-sent", "admin.stop-sent", "admin.skip-sent", "admin.no-leader", "admin.setprices-done", "admin.setprices-no-match",
                 "editor.list.title", "editor.detail.title", "editor.rewards.title", "editor.msg.added"}) {
             assertFalse(lang.raw(key).isEmpty(), "missing lang key " + key);
         }
 
-        // prefix and event.announce are deliberately empty: no chat tag and no pre-event countdown spam.
-        for (String list : new String[]{"help.player", "help.admin", "menu.idle-lore"}) {
+        // prefix is deliberately empty: no chat tag.
+        for (String list : new String[]{"help.player", "help.admin", "menu.idle-lore", "event.announce", "event.announce-now"}) {
             assertFalse(lang.components(list).get(0).toString().contains("missing lang"), "missing lang list " + list);
         }
     }

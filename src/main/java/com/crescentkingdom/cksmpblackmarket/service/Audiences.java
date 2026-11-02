@@ -25,6 +25,11 @@ public final class Audiences {
         return Bukkit.getServer().filterAudience(audience -> !(audience instanceof Player player) || eligible(player));
     }
 
+    /** Every player on this shard who has not opted out, wherever they stand: the "starting soon" notices. */
+    public Audience everyone() {
+        return Bukkit.getServer().filterAudience(audience -> !(audience instanceof Player player) || wants(player));
+    }
+
     /** In the market and not opted out. */
     public boolean eligible(Player player) {
         return plugin.area().contains(player) && wants(player);

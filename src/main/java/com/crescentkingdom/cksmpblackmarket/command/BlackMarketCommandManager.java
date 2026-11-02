@@ -8,11 +8,16 @@ import com.crescentkingdom.cksmpblackmarket.util.Text;
 import com.crescentkingdom.cksmpcore.Managers.Commands.CommandManagers;
 import com.crescentkingdom.cksmpcore.Managers.Commands.SubCommands.SubCommands;
 import com.crescentkingdom.cksmpcore.libs.commandapi.CommandAPICommand;
+import com.crescentkingdom.cksmpcore.libs.commandapi.arguments.DoubleArgument;
+import com.crescentkingdom.cksmpcore.libs.commandapi.arguments.GreedyStringArgument;
+import com.crescentkingdom.cksmpblackmarket.model.PoolEntry;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 
 /**
@@ -35,6 +40,7 @@ public final class BlackMarketCommandManager implements CommandManagers {
         commands.add(() -> control("skip", "SKIP", "admin.skip-sent"));
         commands.add(this::reload);
         commands.add(this::editor);
+        commands.add(this::setPrices);
         commands.add(this::help);
 
         register();
@@ -179,6 +185,51 @@ public final class BlackMarketCommandManager implements CommandManagers {
                 .executesPlayer((player, args) -> {
                     plugin.editor().openList(player, 0);
                 });
+    }
+
+    /**
+     * Bulk price change: /blackmarket setprices &lt;amount&gt; [except words...]. Every prize gets the new start bid except
+     * those whose id or plain display name contains one of the words. Refuses to run when a word matches nothing, so a
+     * typo cannot overwrite the prize that was meant to be left alone.
+     */
+    private CommandAPICommand setPrices() {
+        return new CommandAPICommand("setprices")
+                .withPermission("cksmpblackmarket.commands.admin.setprices")
+                .withArguments(new DoubleArgument("amount", 0.01))
+                .withOptionalArguments(new GreedyStringArgument("except"))
+                .executes((sender, args) -> {
+                    Config cfg = plugin.config();
+                    double amount = (double) args.get("amount");
+                    String raw = (String) args.getOptional("except").orElse("");
+                    List<String> words = Arrays.stream(raw.toLowerCase().split("\s+")).filter(w -> !w.isBlank()).toList();
+
+                    List<PoolEntry> skipped = new ArrayList<>();
+                    List<PoolEntry> changing = new ArrayList<>();
+                    for (PoolEntry entry : cfg.pool().all()) {
+                        String name = entry.id().toLowerCase() + " " + plainName(cfg, entry).toLowerCase();
+                        if (words.stream().anyMatch(name::contains)) skipped.add(entry);
+                        else changing.add(entry);
+                    }
+
+                    for (String word : words) {
+                        boolean used = skipped.stream().anyMatch(e -> (e.id().toLowerCase() + " " + plainName(cfg, e).toLowerCase()).contains(word));
+                        if (!used) {
+                            cfg.lang().send(sender, "admin.setprices-no-match", Placeholder.unparsed("word", word));
+                            return;
+                        }
+                    }
+
+                    for (PoolEntry entry : changing) plugin.prizes().save(entry.withStartBid(amount));
+
+                    cfg.lang().send(sender, "admin.setprices-done", TagResolver.resolver(
+                            Placeholder.unparsed("count", Integer.toString(changing.size())),
+                            Placeholder.component("amount", Text.money(cfg.lang(), amount)),
+                            Placeholder.unparsed("skipped", skipped.isEmpty() ? "none" : String.join(", ", skipped.stream().map(PoolEntry::id).toList()))));
+                });
+    }
+
+    private String plainName(Config cfg, PoolEntry entry) {
+        return net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(plugin.rewards().name(cfg, entry.id(), entry));
     }
 
     private CommandAPICommand reload() {

@@ -154,8 +154,6 @@ public final class SyncService {
             Config cfg = plugin.config();
             var audience = plugin.audiences().announcements();
 
-            if (round.roundNo() == 1) cfg.lang().send(audience, "event.started");
-
             // The item is on show; bids open once the preview is over.
             cfg.lang().send(audience, "round.showing", RoundText.resolver(plugin, cfg, round, System.currentTimeMillis()));
             cfg.play(audience, "round-start");
@@ -245,16 +243,18 @@ public final class SyncService {
         });
     }
 
+    /** Network-wide chat notice (30s, 10s, now): clickable, no sound, no boss bar. */
     private void onAnnounce(int seconds, int rounds) {
         if (!plugin.config().settings().participate()) return;
 
         onGlobal(() -> {
             Config cfg = plugin.config();
-            cfg.lang().sendLines(plugin.audiences().announcements(), "event.announce",
+            String key = seconds <= 0 ? "event.announce-now" : "event.announce";
+
+            cfg.lang().sendLines(plugin.audiences().everyone(), key,
                     Placeholder.component("time", Text.time(cfg.lang(), seconds)),
                     Placeholder.unparsed("seconds", Integer.toString(seconds)),
                     Placeholder.unparsed("rounds", Integer.toString(rounds)));
-            cfg.play(plugin.audiences().announcements(), "event-announce");
         });
     }
 
