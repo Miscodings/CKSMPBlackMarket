@@ -259,12 +259,14 @@ public final class EventScheduler {
         List<Integer> marks = cfg.settings().announceAt();
         int remaining = (int) Math.ceil((event.nextAt() - now) / 1000.0);
 
-        boolean fire = false;
+        // The notice always says the mark itself ("30 seconds"), never the exact time left (29, 28, ...). When several
+        // marks were crossed at once (event created late), the smallest crossed one is the closest to the truth.
+        int mark = -1;
         while (announceIdx < marks.size() && remaining <= marks.get(announceIdx)) {
+            mark = marks.get(announceIdx);
             announceIdx++;
-            fire = true;
         }
-        if (fire && remaining > 0) plugin.sync().publishAnnounce(remaining, event.poolIds().size());
+        if (mark > 0 && remaining > 0) plugin.sync().publishAnnounce(mark, event.poolIds().size());
 
         if (now < event.nextAt()) return;
 
