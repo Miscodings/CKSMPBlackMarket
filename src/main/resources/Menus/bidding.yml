@@ -13,7 +13,7 @@ menu:
   #  name: ' '
 
   bidding:
-    title: "<black><b>Dark Auction > </b>Bidding"
+    title: "<black><b>Black Market > </b>Bidding"
     items:
       reward:
         function: reward

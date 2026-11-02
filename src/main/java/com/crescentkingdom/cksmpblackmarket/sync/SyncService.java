@@ -279,7 +279,8 @@ public final class SyncService {
 
         String reason = data.get("reason").getAsString();
         onGlobal(() -> {
-            plugin.config().lang().send(plugin.audiences().announcements(), "event.cancelled-" + reason);
+            // Everyone heard "starting soon", so everyone hears that it is off.
+            plugin.config().lang().send(plugin.audiences().everyone(), "event.cancelled-" + reason);
             plugin.bossBar().update();
         });
     }

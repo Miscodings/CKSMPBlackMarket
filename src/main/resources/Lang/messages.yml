@@ -19,14 +19,14 @@ help:
   player:
     - " "
     - "<gradient:#7700FF:#FF00FF><b>Black Market</b></gradient> <gray>»"
-    - " <gray>- <white>/blackmarket <gray>| <#D200FF>Go to the market, or open the bidding menu when you are there!"
-    - " <gray>- <white>/blackmarket info <gray>| <#D200FF>Show when the next dark auction starts!"
+    - " <gray>- <white>/blackmarket <gray>| <#D200FF>Go to the Black Market, or open the bidding menu when you are there!"
+    - " <gray>- <white>/blackmarket info <gray>| <#D200FF>Show when the next Black Market starts!"
     - " <gray>- <white>/blackmarket history <gray>| <#D200FF>See who won recently!"
     - " "
   admin:
     - "<gradient:#7700FF:#FF00FF><b>Black Market Admin</b></gradient> <gray>»"
-    - " <gray>- <white>/blackmarket start <gray>| <#D200FF>Start a dark auction!"
-    - " <gray>- <white>/blackmarket stop <gray>| <#D200FF>Stop the dark auction (refunds the top bid)!"
+    - " <gray>- <white>/blackmarket start <gray>| <#D200FF>Start a Black Market!"
+    - " <gray>- <white>/blackmarket stop <gray>| <#D200FF>Stop the Black Market (refunds the top bid)!"
     - " <gray>- <white>/blackmarket skip <gray>| <#D200FF>End the current item now!"
     - " <gray>- <white>/blackmarket editor <gray>| <#D200FF>Open the prize editor!"
     - " <gray>- <white>/blackmarket setprices <amount> [except words] <gray>| <#D200FF>Set every start bid at once!"
@@ -34,7 +34,7 @@ help:
     - " "
 
 menu:
-  idle-name: "<#D200FF>No dark auction right now"
+  idle-name: "<#D200FF>No Black Market right now"
   idle-lore:
     - " "
     - " <#DDDDDD>- <white>Next one in: <#D200FF><time>"
@@ -44,21 +44,20 @@ general:
   reloaded: "<prefix> <#33FF33>Plugin successfully reloaded!"
   reload-failed: "<prefix> <#FF3333>Failed to reload the plugin! <white><error>"
   player-only: "<prefix> <#FF0000>You must be a player to use this command!"
-  not-participating: "<prefix> <#FF0000>The dark auction is not held on this server!"
+  not-participating: "<prefix> <#FF0000>The Black Market is not held on this server!"
 
 area:
   unavailable: "<prefix> <#FF0000>The Black Market is not open right now!"
   not-inside-bid: "<prefix> <#FF0000>You must be inside the Black Market to bid! Use <white>/blackmarket<#FF0000> to go there."
 
 bid:
-  no-round: "<prefix> <#FF0000>The dark auction is not running!"
+  no-round: "<prefix> <#FF0000>The Black Market is not running!"
   not-open: "<prefix> <#FF0000>The bidding has not started yet!"
   already-leading: "<prefix> <#FF0000>You are already the top bidder!"
   insufficient: "<prefix> <#FF0000>You can not afford to bid <white><amount><#FF0000>, you only have <white><balance><#FF0000>!"
   withdraw-failed: "<prefix> <#FF0000>Your payment could not be taken. Try again!"
   outraced: "<prefix> <#FF0000>Somebody already bid more than this amount! <#DDDDDD>(<white><amount><#DDDDDD> returned)"
   error: "<prefix> <#FF0000>Your bid failed. <#DDDDDD>(<white><amount><#DDDDDD> returned)"
-  placed: "<prefix> <#D200FF>You are now the top bidder with <white><amount><#D200FF>!"
   outbid: "<prefix> <white><player> <#D200FF>outbid you on <white><item><#D200FF>! <#DDDDDD>(<white><amount><#DDDDDD> returned)"
   broadcast: "<prefix> <white><player> <#D200FF>has bid <white><amount><#D200FF>! There are still <white><seconds> <#D200FF>seconds left!"
 
@@ -74,15 +73,16 @@ event:
     - "<#D200FF>The Black Market starts in <white><seconds> seconds<#D200FF>! <click:run_command:/blackmarket><hover:show_text:'<#D200FF>Click to join'><white><u>/blackmarket</u></hover></click> <#D200FF>to join."
   announce-now:
     - "<#D200FF>The Black Market is starting now! <click:run_command:/blackmarket><hover:show_text:'<#D200FF>Click to join'><white><u>/blackmarket</u></hover></click> <#D200FF>to join."
-  started: "<prefix> <#D200FF>The dark auction is starting! Get ready!"
-  finished: "<prefix> <#D200FF>There are no more items to be auctioned! Today's dark auction is over, come back next time!"
-  cancelled-low-players: "<prefix> <#D200FF>There are not enough players, so the dark auction is not going to be held!"
-  cancelled-admin: "<prefix> <#D200FF>The dark auction was stopped by an admin, all bids were returned!"
+  finished: "<prefix> <#D200FF>There are no more items to be auctioned! This Black Market is over, come back next time!"
+  cancelled-low-players: "<prefix> <#D200FF>There are not enough players, so the Black Market is not going to be held!"
+  cancelled-admin: "<prefix> <#D200FF>The Black Market was stopped by an admin, all bids were returned!"
 
 round:
-  waiting: "<prefix> <#D200FF>The next item will be announced in <white><seconds> <#D200FF>seconds!"
+  # An empty string switches a message off. Only the item announcement and the result are sent in the market,
+  # the menu and boss bar already show the rest.
+  waiting: ""
   showing: "<prefix> <#D200FF>The next item that you can bid for is: <white><item><#D200FF>, the starting price is: <white><start-bid><#D200FF>! The bidding will start in <white><opens-in> <#D200FF>seconds!"
-  bidding: "<prefix> <#D200FF>The bidding has started for the following item: <white><item><#D200FF>, at the starting price of <white><start-bid><#D200FF>! The winner will be announced in <white><seconds> <#D200FF>seconds!"
+  bidding: ""
   no-bids: "<prefix> <#D200FF>Nobody has bid on the item <white><item><#D200FF>!"
   won: "<prefix> <white><player> <#D200FF>has won the <white><item> <#D200FF>for <white><amount><#D200FF>!"
   you-won: "<prefix> <#00FF00>You won <white><item><#00FF00>!"
@@ -93,8 +93,8 @@ bossbar:
 
 status:
   active: "<prefix> <#D200FF>Round <white><round>/<rounds><#D200FF>: <white><item><#D200FF>, top bid <white><amount> <#D200FF>by <white><player><#D200FF>, <white><seconds> <#D200FF>seconds left!"
-  idle-next: "<prefix> <#D200FF>The next dark auction will be in <white><time><#D200FF>!"
-  idle-none: "<prefix> <#D200FF>There is no dark auction scheduled right now!"
+  idle-next: "<prefix> <#D200FF>The next Black Market will be in <white><time><#D200FF>!"
+  idle-none: "<prefix> <#D200FF>There is no Black Market scheduled right now!"
 
 history:
   header: "<prefix> <#D200FF>Recent winners:"
@@ -177,7 +177,7 @@ editor:
     commands-lore:
       - " "
       - " <#DDDDDD>- <white>Commands run on win: <#D200FF><count>"
-      - " <#DDDDDD>- <white>Set these through items.yml (first start)."
+      - " <#DDDDDD>- <white>Not editable in-game, only imported from items.yml."
     give-name: "<#00FF00><b>Give me a copy"
     give-lore:
       - " "
@@ -209,9 +209,9 @@ editor:
     in-use: "<prefix> <#FF0000>The <white><id> <#FF0000>prize is being auctioned right now, wait until it is over or switch it off instead!"
 
 admin:
-  start-sent: "<prefix> <#00FF00>You have started the dark auction!"
-  stop-sent: "<prefix> <#00FF00>You have stopped the dark auction!"
+  start-sent: "<prefix> <#00FF00>You have started the Black Market!"
+  stop-sent: "<prefix> <#00FF00>You have stopped the Black Market!"
   skip-sent: "<prefix> <#00FF00>You have ended the current item!"
-  no-leader: "<prefix> <#FF0000>No server is running the dark auction scheduler right now!"
+  no-leader: "<prefix> <#FF0000>No server is running the Black Market scheduler right now!"
   setprices-done: "<prefix> <#00FF00>Set the start bid of <white><count> <#00FF00>prizes to <white><amount><#00FF00>. Left alone: <white><skipped>"
   setprices-no-match: "<prefix> <#FF0000>No prize id or name contains <white><word><#FF0000>, so nothing was changed."

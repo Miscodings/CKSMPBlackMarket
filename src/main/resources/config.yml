@@ -10,10 +10,10 @@ participate: true
 # see broadcasts and the boss bar or can bid, and leaving is up to the players (an NPC, /back, /spawn, ...).
 area:
   warp: "blackmarket"
-  # Best for a room inside a shared world: opposite corners [x, y, z] of a cuboid, in the warp's world. Both must be
-  # set; when they are, radius is ignored. Leave commented out to fall back to radius.
-  # min: [0, 0, 0]
-  # max: [0, 0, 0]
+  # A room inside a shared world: opposite corners [x, y, z] of a cuboid, in the warp's world. Both must be set;
+  # when they are, radius is ignored. Remove both to fall back to radius.
+  min: [74, 53, 18]
+  max: [90, 58, 34]
   # Without min/max: blocks around the warp (square on X/Z, any height) that count as inside. 0 = the whole warp world.
   radius: 0
 
@@ -77,8 +77,8 @@ round:
 
 bidding:
   cooldown-ms: 750
-  # Broadcast every bid, like AxDarkAuctions does. Players can opt out with the announcement setting below.
-  broadcast-bids: true
+  # Chat line for every bid, to everyone in the market. Off: the bidding menu already shows the top bid.
+  broadcast-bids: false
 
 history:
   size: 8
@@ -107,7 +107,6 @@ bossbar:
 
 # Sounds: set `sound` to "" to disable one.
 sounds:
-  event-announce: { sound: "", source: MASTER, volume: 0.8, pitch: 0.7 }
   round-start: { sound: "minecraft:block.end_portal.spawn", source: MASTER, volume: 0.4, pitch: 1.4 }
   bidding-open: { sound: "minecraft:block.note_block.pling", source: MASTER, volume: 0.8, pitch: 1.2 }
   bid-success: { sound: "minecraft:entity.experience_orb.pickup", source: MASTER, volume: 1.0, pitch: 1.3 }

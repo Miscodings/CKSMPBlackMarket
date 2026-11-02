@@ -37,7 +37,7 @@ class ResourcesTest {
         assertEquals(8, s.snipeWindowSeconds());
         assertEquals(8, s.snipeExtendSeconds());
         assertEquals(5, s.breakSeconds());
-        assertTrue(s.broadcastBids());
+        assertFalse(s.broadcastBids());
         assertNotNull(s.sound("bidding-open"));
     }
 
@@ -65,8 +65,8 @@ class ResourcesTest {
                 "bid.no-round", "bid.not-open", "bid.already-leading", "bid.insufficient", "bid.withdraw-failed",
                 "bid.outraced", "bid.error", "bid.outbid", "bid.broadcast",
                 "payout.refund", "payout.reward", "payout.stashed", "payout.reward-missing",
-                "event.started", "event.finished", "event.cancelled-low-players", "event.cancelled-admin",
-                "round.waiting", "round.showing", "round.bidding", "round.no-bids", "round.won", "round.you-won",
+                "event.finished", "event.cancelled-low-players", "event.cancelled-admin",
+                "round.showing", "round.no-bids", "round.won", "round.you-won",
                 "bossbar.preview", "bossbar.title", "status.active", "status.idle-next", "status.idle-none",
                 "history.header", "history.line", "history.empty", "discord.event-start", "discord.round-won",
                 "general.reloaded", "general.reload-failed", "menu.idle-name", "menu.idle-none",

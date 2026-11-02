@@ -68,7 +68,10 @@ public final class Lang {
         return colours.miniFormat(miniMessage, resolver(resolvers));
     }
 
+    /** An empty string in the lang file switches that message off (nothing is sent, not even a blank line). */
     public void send(Audience audience, String key, TagResolver... resolvers) {
+        if (strings.containsKey(key) && strings.get(key).isEmpty()) return;
+
         audience.sendMessage(component(key, resolvers));
     }
 
