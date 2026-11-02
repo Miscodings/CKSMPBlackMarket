@@ -40,7 +40,7 @@ menu:
           - "<#D200FF><b>> <#D200FF>Click here to place your bid!"
 
   preview:
-    title: "<black><b>Dark Auction > </b>Next Bid"
+    title: "<black><b>Black Market > </b>Next Bid"
     items:
       reward:
         function: reward
